@@ -4,25 +4,73 @@
 <meta charset="UTF-8">
 <title>Web GIS Jaringan Listrik Bartim</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
 body{margin:0;font-family:Segoe UI,Arial;background:#f4f6f8}
-header{position:fixed;top:0;left:0;right:0;background:#fff;z-index:1000;border-bottom:2px solid #ddd}
-.header-top{display:flex;align-items:center;padding:6px 12px}
+
+/* HEADER */
+header{
+  position:fixed;top:0;left:0;right:0;
+  background:#fff;z-index:1000;
+  border-bottom:2px solid #e5e7eb
+}
+.header-top{
+  display:flex;align-items:center;padding:6px 12px
+}
 .header-top img{height:42px}
-.header-title{flex:1;text-align:center}
-.header-controls{display:flex;gap:10px;padding:6px 12px;background:#f9fafb}
-select,button{padding:6px 10px;border-radius:6px}
-button{background:#2563eb;color:#fff;border:none;cursor:pointer}
-#map{position:absolute;top:130px;left:0;right:0;bottom:0}
-#popup{position:fixed;top:150px;right:20px;width:320px;background:#fff;
-border-radius:10px;box-shadow:0 10px 25px rgba(0,0,0,.2);
-display:none;z-index:2000}
-.popup-head{background:#2563eb;color:#fff;padding:10px;
-display:flex;justify-content:space-between}
-.popup-body{padding:12px;font-size:14px}
-.popup-body input{width:100%;padding:6px;margin-top:4px}
+.header-title{flex:1;text-align:center;font-size:14px}
+.header-controls{
+  display:flex;gap:10px;padding:6px 12px;
+  background:#f9fafb
+}
+select,button{
+  padding:6px 10px;border-radius:6px;font-size:14px
+}
+button{
+  background:#2563eb;color:#fff;border:none;cursor:pointer
+}
+
+/* MAP */
+#map{
+  position:absolute;
+  top:130px;left:0;right:0;bottom:0
+}
+
+/* POPUP OVERLAY */
+#popup{
+  position:fixed;
+  top:150px;right:20px;
+  width:340px;
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  display:none;
+  z-index:2000
+}
+.popup-head{
+  background:#2563eb;
+  color:#fff;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-radius:10px 10px 0 0
+}
+.popup-body{
+  padding:12px;font-size:14px
+}
+.popup-body label{display:block;margin-top:8px}
+.popup-body input,
+.popup-body select{
+  width:100%;padding:6px;margin-top:4px
+}
+.popup-body small{color:#666}
+
+@media(max-width:768px){
+  #popup{left:10px;right:10px;width:auto}
+}
 </style>
 </head>
 
@@ -38,67 +86,114 @@ display:flex;justify-content:space-between}
     <img src="assets/img/logo-pln.png">
   </div>
   <div class="header-controls">
-    <select id="kec"></select>
-    <button onclick="openForm()">+ Input Data</button>
+    <select id="kecamatanFilter">
+      <option value="">-- Pilih Kecamatan --</option>
+    </select>
+    <button onclick="openInput()">+ Input Data</button>
   </div>
 </header>
 
 <div id="map"></div>
 
+<!-- POPUP -->
 <div id="popup">
   <div class="popup-head">
-    <span id="popTitle">Detail</span>
-    <span onclick="closePop()">✖</span>
+    <span id="popupTitle">Judul</span>
+    <span onclick="closePopup()" style="cursor:pointer">✖</span>
   </div>
-  <div class="popup-body" id="popBody"></div>
+  <div class="popup-body" id="popupBody"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-const API="https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
+/* ================= CONFIG ================= */
+const API = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
 
-const map=L.map('map',{minZoom:9,maxZoom:19}).setView([-1.95,115.15],10);
+/* ================= MAP ================= */
+const map = L.map('map',{minZoom:9,maxZoom:19})
+  .setView([-1.95,115.15],10);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-const layer=L.layerGroup().addTo(map);
 
-/* LOAD KECAMATAN */
-fetch(API+'?action=master').then(r=>r.json()).then(j=>{
-  const s=document.getElementById('kec');
-  s.innerHTML='<option value="">-- Pilih Kecamatan --</option>';
-  [...new Set(j.data.map(d=>d.kecamatan))].forEach(k=>{
-    s.innerHTML+=`<option>${k}</option>`;
+const layer = L.layerGroup().addTo(map);
+
+/* ================= ICON PLN ================= */
+const plnIcon = L.icon({
+  iconUrl:'assets/img/pln.png',
+  iconSize:[36,36],
+  iconAnchor:[18,18]
+});
+
+/* ================= MASTER WILAYAH ================= */
+let masterWilayah = [];
+
+fetch(API+'?action=master')
+.then(r=>r.json())
+.then(j=>{
+  masterWilayah = j.data;
+  const kec = [...new Set(j.data.map(d=>d.kecamatan))];
+  const sel = document.getElementById('kecamatanFilter');
+  kec.forEach(k=>{
+    sel.innerHTML += `<option value="${k}">${k}</option>`;
   });
 });
 
-/* DEMO POLYLINE */
-document.getElementById('kec').onchange=e=>{
+/* ================= FILTER (BELUM RENDER POLYLINE) ================= */
+document.getElementById('kecamatanFilter').onchange = ()=>{
   layer.clearLayers();
-  if(!e.target.value)return;
-  const poly=L.polyline([[-1.95,115.12],[-1.96,115.15],[-1.97,115.18]],
-    {color:'#2563eb',weight:4}).addTo(layer);
-  poly.on('click',()=>showDetail());
-  map.fitBounds(poly.getBounds());
+  closePopup();
+  // rendering data_jaringan + polyline akan ditambahkan tahap berikut
 };
 
-function showDetail(){
-  document.getElementById('popTitle').innerText='Detail Jaringan';
-  document.getElementById('popBody').innerHTML=
-    `<b>Status:</b> Draft<br>Data siap ditampilkan`;
-  openPop();
+/* ================= INPUT FORM ================= */
+function openInput(){
+  document.getElementById('popupTitle').innerText = 'Input Data Jaringan';
+
+  document.getElementById('popupBody').innerHTML = `
+    <label>Kecamatan</label>
+    <select id="f_kec" onchange="loadDesa()">
+      <option value="">-- Pilih Kecamatan --</option>
+      ${[...new Set(masterWilayah.map(d=>d.kecamatan))]
+        .map(k=>`<option>${k}</option>`).join('')}
+    </select>
+
+    <label>Desa / Kelurahan</label>
+    <select id="f_desa">
+      <option value="">-- Pilih Desa --</option>
+    </select>
+
+    <label>Jumlah Tiang</label>
+    <input id="f_tiang" type="number" min="0">
+
+    <label>Panjang Jaringan (km)</label>
+    <input value="otomatis dari tracking" readonly>
+
+    <label>Upload Data Tracking</label>
+    <input type="file" disabled>
+    <small>Aktif setelah tahap parsing polyline</small>
+
+    <button style="margin-top:12px" onclick="saveData()">Simpan</button>
+  `;
+  openPopup();
 }
 
-/* FORM INPUT */
-function openForm(){
-  document.getElementById('popTitle').innerText='Input Data';
-  document.getElementById('popBody').innerHTML=`
-    <label>Kecamatan</label><input id="f_kec">
-    <label>Desa</label><input id="f_desa">
-    <label>Jumlah Tiang</label><input id="f_tiang" type="number">
-    <button style="margin-top:10px" onclick="save()">Simpan</button>`;
-  openPop();
+function loadDesa(){
+  const kec = f_kec.value;
+  const desa = masterWilayah
+    .filter(d=>d.kecamatan===kec)
+    .map(d=>d.desa_kelurahan);
+
+  f_desa.innerHTML = '<option value="">-- Pilih Desa --</option>';
+  desa.forEach(d=>f_desa.innerHTML+=`<option>${d}</option>`);
 }
 
-function save(){
+/* ================= SAVE DATA ================= */
+function saveData(){
+  if(!f_kec.value || !f_desa.value || !f_tiang.value){
+    alert('Lengkapi semua field wajib');
+    return;
+  }
+
   fetch(API,{
     method:'POST',
     body:JSON.stringify({
@@ -112,11 +207,20 @@ function save(){
     })
   })
   .then(r=>r.json())
-  .then(j=>alert(j.message+'\nID: '+j.id_jaringan));
+  .then(j=>{
+    if(j.status==='OK'){
+      alert('✅ Data tersimpan\nID: '+j.id_jaringan);
+      closePopup();
+    } else {
+      alert('❌ '+j.message);
+    }
+  });
 }
 
-function openPop(){popup.style.display='block'}
-function closePop(){popup.style.display='none'}
+/* ================= POPUP ================= */
+function openPopup(){ popup.style.display='block'; }
+function closePopup(){ popup.style.display='none'; }
 </script>
+
 </body>
 </html>

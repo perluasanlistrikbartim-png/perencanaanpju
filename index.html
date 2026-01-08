@@ -8,16 +8,54 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-body{margin:0;font-family:Segoe UI,Arial;background:#f4f6f8}
+/* ===============================
+   GLOBAL
+================================ */
+*{box-sizing:border-box}
 
-/* HEADER */
-/* ===== HEADER KOP SURAT ===== */
+body{
+  margin:0;
+  font-family:Segoe UI, Arial, sans-serif;
+  background:#f4f6f8;
+  color:#1f2937;
+}
+
+/* ===============================
+   ANIMASI HALUS (DENYUT RINGAN)
+================================ */
+@keyframes softPulse{
+  0%{
+    box-shadow:0 0 0 rgba(244,196,48,0.0);
+  }
+  50%{
+    box-shadow:0 0 12px rgba(244,196,48,0.35);
+  }
+  100%{
+    box-shadow:0 0 0 rgba(244,196,48,0.0);
+  }
+}
+
+@keyframes fadeSlide{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* ===============================
+   HEADER KOP SURAT (PUPR + PLN)
+================================ */
 header{
   position:fixed;
   top:0; left:0; right:0;
-  background:#ffffff;
+  background:#0f4c81; /* Biru PUPR */
   z-index:1000;
-  border-bottom:3px solid #000;
+  border-bottom:4px solid #f4c430; /* Kuning PLN */
+  animation:softPulse 6s ease-in-out infinite;
 }
 
 .header-top{
@@ -34,13 +72,14 @@ header{
 }
 
 .header-logo img{
-  height:60px;
+  height:58px;
 }
 
 .header-title{
   flex:1;
   text-align:center;
   line-height:1.4;
+  color:#ffffff;
 }
 
 .header-title .title-main{
@@ -51,80 +90,152 @@ header{
 
 .header-title .title-sub{
   font-size:13px;
-  font-weight:600;
+  font-weight:500;
+  opacity:.95;
 }
 
+/* ===============================
+   BAR KONTROL
+================================ */
 .header-controls{
   display:flex;
   gap:10px;
   padding:8px 16px;
-  background:#f9fafb;
-  border-top:1px solid #e5e7eb;
+  background:#e9f1f8;
+  border-top:1px solid rgba(255,255,255,0.3);
 }
 
+.header-controls select{
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #cbd5e1;
+  background:#ffffff;
+  font-size:14px;
+}
+
+.header-controls button{
+  padding:6px 14px;
+  border-radius:6px;
+  border:none;
+  background:#f4c430;
+  color:#1f2937;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s ease;
+  animation:softPulse 5s ease-in-out infinite;
+}
+
+.header-controls button:hover{
+  background:#e6b800;
+  transform:translateY(-1px);
+}
+
+/* ===============================
+   MAP
+================================ */
+#map{
+  margin-top:150px;
+  width:100%;
+  height:60vh;
+  z-index:1;
+}
+
+/* ===============================
+   TABLE
+================================ */
+.table-wrapper{
+  background:#ffffff;
+  padding:12px;
+  border-top:3px solid #0f4c81;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+th, td{
+  border:1px solid #e5e7eb;
+  padding:6px 8px;
+}
+
+th{
+  background:#f1f5f9;
+  color:#0f4c81;
+  font-weight:600;
+}
+
+/* ===============================
+   POPUP OVERLAY
+================================ */
+#popup{
+  position:fixed;
+  top:160px;
+  right:20px;
+  width:340px;
+  background:#ffffff;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  display:none;
+  z-index:2000;
+  animation:fadeSlide .25s ease-out;
+}
+
+.popup-head{
+  background:#0f4c81;
+  color:#ffffff;
+  padding:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-radius:10px 10px 0 0;
+}
+
+.popup-body{
+  padding:12px;
+  font-size:14px;
+}
+
+.popup-body label{
+  display:block;
+  margin-top:8px;
+}
+
+.popup-body input,
+.popup-body select{
+  width:100%;
+  padding:6px;
+  margin-top:4px;
+  border:1px solid #d1d5db;
+  border-radius:6px;
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
 @media(max-width:768px){
   .header-top{
     flex-direction:column;
     gap:6px;
   }
-  .header-logo{
+
+  .header-logo img{
+    height:48px;
+  }
+
+  #map{
+    height:50vh;
+  }
+
+  #popup{
+    left:10px;
+    right:10px;
     width:auto;
   }
-  .header-logo img{
-    height:50px;
-  }
-  .header-title{
-    font-size:14px;
-  }
-}
-
-select,button{
-  padding:6px 10px;border-radius:6px;font-size:14px
-}
-button{
-  background:#2563eb;color:#fff;border:none;cursor:pointer
-}
-
-/* MAP */
-#map{
-  position:absolute;
-  top:130px;left:0;right:0;bottom:0
-}
-
-/* POPUP OVERLAY */
-#popup{
-  position:fixed;
-  top:150px;right:20px;
-  width:340px;
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 10px 25px rgba(0,0,0,.25);
-  display:none;
-  z-index:2000
-}
-.popup-head{
-  background:#2563eb;
-  color:#fff;
-  padding:10px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border-radius:10px 10px 0 0
-}
-.popup-body{
-  padding:12px;font-size:14px
-}
-.popup-body label{display:block;margin-top:8px}
-.popup-body input,
-.popup-body select{
-  width:100%;padding:6px;margin-top:4px
-}
-.popup-body small{color:#666}
-
-@media(max-width:768px){
-  #popup{left:10px;right:10px;width:auto}
 }
 </style>
+
 </head>
 
 <body>

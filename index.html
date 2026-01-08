@@ -334,6 +334,8 @@ function openInput(){
     <select id="f_desa">
       <option value="">-- Pilih Desa --</option>
     </select>
+   <label>Ruas Jalan</label>
+   <input id="f_ruas" type="text" placeholder="Contoh: Tamiang Layang-Dorong">
 
     <label>Jumlah Tiang</label>
     <input id="f_tiang" type="number" min="0">
@@ -394,7 +396,7 @@ function loadDesa(){
 
 /* ================= SAVE DATA ================= */
 function saveData(){
-  if(!f_kec.value || !f_desa.value || !f_tiang.value){
+  if(!f_kec.value || !f_desa.value || !f_ruas.value || !f_tiang.value){
     alert('Lengkapi data wilayah dan jumlah tiang');
     return;
   }
@@ -404,11 +406,13 @@ function saveData(){
     body:JSON.stringify({
       action:'save_data',
       payload:{
-        kecamatan:f_kec.value,
-        desa_kelurahan:f_desa.value,
-        jumlah_tiang:Number(f_tiang.value),
-        kode_kecamatan:f_kec.value.substring(0,2).toUpperCase()
-      }
+  kecamatan:f_kec.value,
+  desa_kelurahan:f_desa.value,
+  ruas_jalan:f_ruas.value,
+  jumlah_tiang:Number(f_tiang.value),
+  kode_kecamatan:f_kec.value.substring(0,2).toUpperCase()
+}
+
     })
   })
   .then(r=>r.json())

@@ -396,44 +396,57 @@ function loadDesa(){
 
 /* ================= SAVE DATA ================= */
 function saveData(){
+  // ================= VALIDASI =================
   if(!f_kec.value || !f_desa.value || !f_ruas.value || !f_tiang.value){
-    alert('Lengkapi data wilayah dan jumlah tiang');
+    alert('Lengkapi Kecamatan, Desa/Kelurahan, Ruas Jalan, dan Jumlah Tiang');
     return;
   }
 
-  fetch(API,{
-    method:'POST',
-    body:JSON.stringify({
-      action:'save_data',
-      payload:{
-  kecamatan:f_kec.value,
-  desa_kelurahan:f_desa.value,
-  ruas_jalan:f_ruas.value,
-  jumlah_tiang:Number(f_tiang.value),
-  kode_kecamatan:f_kec.value.substring(0,2).toUpperCase()
-}
+  const payload = {
+    kecamatan      : f_kec.value,
+    desa_kelurahan : f_desa.value,
+    ruas_jalan     : f_ruas.value,
+    jumlah_tiang   : Number(f_tiang.value),
+    kode_kecamatan : f_kec.value.substring(0,2).toUpperCase()
+  };
 
+  // ================= KIRIM KE GAS =================
+  fetch(API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      action: 'save_data',
+      payload: payload
     })
   })
-  .then(r=>r.json())
-  .then(j=>{
-    if(j.status!=='OK'){
-      alert(j.message);
+  .then(res => {
+    if(!res.ok) throw new Error('Gagal koneksi ke server');
+    return res.json();
+  })
+  .then(j => {
+    if(j.status !== 'OK'){
+      alert('❌ ' + j.message);
       return;
     }
 
-    // DATA SUDAH TERSIMPAN
     const idJaringan = j.id_jaringan;
 
-    // JIKA ADA FILE → UPLOAD
+    // ================= UPLOAD TRACKING (OPSIONAL) =================
     const fileInput = document.getElementById('f_file');
-    if(fileInput && fileInput.files.length){
-      uploadTracking(idJaringan);
-    }else{
-      alert('✅ Data tersimpan\nID: '+idJaringan);
+
+    if(fileInput && fileInput.files.length > 0){
+      uploadTracking(idJaringan); // upload GPX/KML
+    } else {
+      alert('✅ Data tersimpan\nID: ' + idJaringan);
     }
 
     closePopup();
+  })
+  .catch(err => {
+    console.error(err);
+    alert('❌ Terjadi kesalahan saat menyimpan data');
   });
 }
 

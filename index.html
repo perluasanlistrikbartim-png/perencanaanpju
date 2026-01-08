@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Web GIS Jaringan Listrik Kabupaten Barito Timur</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    /* ================= GLOBAL ================= */
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    /* ================= HEADER ================= */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #fff;
+      border-bottom: 2px solid #e5e7eb;
+      z-index: 1000;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+    }
+
+    .header-logo img {
+      height: 46px;
+    }
+
+    .header-title {
+      text-align: center;
+      flex: 1;
+    }
+
+    .header-title h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .header-title p {
+      margin: 0;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      padding: 8px 16px;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    select, button {
+      padding: 7px 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+    }
+
+    button {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    /* ================= LAYOUT ================= */
+    .main {
+      display: flex;
+      padding-top: 150px;
+      height: calc(100vh - 150px);
+    }
+
+    #map {
+      flex: 2;
+    }
+
+    .panel {
+      flex: 1;
+      background: #fff;
+      border-left: 1px solid #e5e7eb;
+      padding: 12px;
+      overflow-y: auto;
+    }
+
+    .panel h3 {
+      margin-top: 0;
+      font-size: 16px;
+    }
+
+    .placeholder {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    /* ================= TABLE ================= */
+    .table-wrap {
+      padding: 10px;
+      background: #fff;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    th {
+      background: #f3f4f6;
+    }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 768px) {
+      .main {
+        flex-direction: column;
+      }
+      .panel {
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<div class="header">
+  <div class="header-top">
+    <div class="header-logo">
+      <img src="assets/img/logo-bartim.png" alt="Bartim">
+    </div>
+
+    <div class="header-title">
+      <h1>Sistem Informasi Jaringan Listrik</h1>
+      <p>Kabupaten Barito Timur</p>
+    </div>
+
+    <div class="header-logo">
+      <img src="assets/img/logo-pln.png" alt="PLN">
+    </div>
+  </div>
+
+  <div class="header-controls">
+    <select id="kecamatanSelect">
+      <option value="">-- Pilih Kecamatan --</option>
+      <option value="ALL">Semua Kecamatan</option>
+    </select>
+    <button id="btnInput">+ Input Data</button>
+  </div>
+</div>
+
+<!-- ================= MAIN ================= -->
+<div class="main">
+  <div id="map"></div>
+
+  <div class="panel" id="infoPanel">
+    <h3>Informasi</h3>
+    <div class="placeholder">
+      Pilih kecamatan dan klik jaringan untuk melihat detail data.
+    </div>
+  </div>
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="table-wrap">
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Kecamatan</th>
+        <th>Desa</th>
+        <th>Panjang (km)</th>
+        <th>Tiang</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+/* ================= CONFIG ================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
+
+/* ================= MAP INIT ================= */
+const map = L.map('map', {
+  minZoom: 9,
+  maxZoom: 19
+}).setView([-1.95, 115.15], 10); // Bartim approx
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+/* ================= LAYERS ================= */
+const layerGroup = L.layerGroup().addTo(map);
+
+/* ================= ICON PLN ================= */
+const plnIcon = L.icon({
+  iconUrl: 'assets/img/pln.png',
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+
+/* ================= LOAD KECAMATAN ================= */
+fetch(API_URL + '?action=master')
+  .then(r => r.json())
+  .then(json => {
+    const select = document.getElementById('kecamatanSelect');
+    const kecamatanSet = new Set(json.data.map(d => d.kecamatan));
+    kecamatanSet.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = k;
+      select.appendChild(opt);
+    });
+  });
+
+/* ================= MIDPOINT HELPER ================= */
+function getMidPoint(coords) {
+  const mid = Math.floor(coords.length / 2);
+  return coords[mid];
+}
+
+/* ================= LOAD DATA (DUMMY POLYLINE) ================= */
+document.getElementById('kecamatanSelect').addEventListener('change', e => {
+  layerGroup.clearLayers();
+  document.querySelector('#dataTable tbody').innerHTML = '';
+
+  if (!e.target.value) return;
+
+  // ===== DUMMY polyline (placeholder sampai polyline real masuk) =====
+  const coords = [
+    [-1.95, 115.12],
+    [-1.96, 115.14],
+    [-1.97, 115.16]
+  ];
+
+  const poly = L.polyline(coords, { color: '#2563eb', weight: 4 }).addTo(layerGroup);
+
+  const mid = getMidPoint(coords);
+  const marker = L.marker(mid, { icon: plnIcon }).addTo(layerGroup);
+
+  poly.on('click', () => showInfo());
+  marker.on('click', () => showInfo());
+
+  map.fitBounds(poly.getBounds());
+
+  addTableRow("JL-DT-2025-001", e.target.value, "Contoh Desa", 1.2, 15);
+});
+
+/* ================= PANEL ================= */
+function showInfo() {
+  document.getElementById('infoPanel').innerHTML = `
+    <h3>Detail Jaringan</h3>
+    <p><b>ID:</b> JL-DT-2025-001</p>
+    <p><b>Kecamatan:</b> Contoh</p>
+    <p><b>Desa:</b> Contoh Desa</p>
+    <p><b>Panjang:</b> 1.2 km</p>
+    <p><b>Tiang:</b> 15</p>
+  `;
+}
+
+/* ================= TABLE ================= */
+function addTableRow(id, kec, desa, panjang, tiang) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${id}</td>
+    <td>${kec}</td>
+    <td>${desa}</td>
+    <td>${panjang}</td>
+    <td>${tiang}</td>
+  `;
+  tr.onclick = showInfo;
+  document.querySelector('#dataTable tbody').appendChild(tr);
+}
+</script>
+
+</body>
+</html>

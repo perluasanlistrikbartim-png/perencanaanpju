@@ -447,10 +447,25 @@ function saveData(){
     alert('❌ Terjadi kesalahan saat menyimpan data');
   });
 }
+function loadPolyline(){
+  fetch(API+'?action=polyline')
+    .then(r=>r.json())
+    .then(j=>{
+      layer.clearLayers();
+      j.data.forEach(d=>{
+        L.polyline(JSON.parse(d.polyline_json),{
+          color:'#facc15',
+          weight:4
+        }).addTo(layer);
+      });
+    });
+}
+loadPolyline();
 
 /* ================= POPUP ================= */
 function openPopup(){ popup.style.display='block'; }
 function closePopup(){ popup.style.display='none'; }
+   
 </script>
 
 </body>

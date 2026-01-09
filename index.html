@@ -281,6 +281,17 @@ th{
 <script>
 /* ================= CONFIG ================= */
 const API = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
+/* ================= DATA JARINGAN ================= */
+let dataJaringan = [];
+
+function loadDataJaringan(){
+  fetch(API + '?action=data')
+    .then(r => r.json())
+    .then(j => {
+      dataJaringan = j.data;
+      console.log('DATA JARINGAN:', dataJaringan);
+    });
+}
 
 /* ================= MAP ================= */
 const map = L.map('map',{minZoom:9,maxZoom:19})
@@ -447,31 +458,45 @@ function saveData(){
     alert('❌ Terjadi kesalahan saat menyimpan data');
   });
 }
-function loadPolyline(){
+function loadPolyline(filterKec=''){
   fetch(API+'?action=polyline')
     .then(r=>r.json())
     .then(j=>{
-      map.invalidateSize(); // 🔴 INI KUNCINYA
-
       layer.clearLayers();
 
-      j.data.forEach(d=>{
-        if(!d.polyline_json) return;
+      j.data.forEach(p=>{
+        // cari kecamatan dari data_jaringan
+        const dj = dataJaringan.find(d=>d.id_jaringan === p.id_jaringan);
+        if(!dj) return;
 
-        const coords = JSON.parse(d.polyline_json);
+        // FILTER KECAMATAN
+        if(filterKec && dj.kecamatan !== filterKec) return;
 
-        L.polyline(coords,{
+        const coords = JSON.parse(p.polyline_json);
+
+        const poly = L.polyline(coords,{
           color:'#facc15',
           weight:4
         }).addTo(layer);
+
+        // OPTIONAL: popup info
+        poly.bindPopup(`
+          <b>${dj.ruas_jalan}</b><br>
+          Kecamatan: ${dj.kecamatan}<br>
+          Panjang: ${p.panjang_m} m
+        `);
       });
     });
 }
 
 
+
+
 map.whenReady(() => {
+  loadDataJaringan();   // ⬅️ PENTING
   loadPolyline();
 });
+
 
 
 /* ================= POPUP ================= */

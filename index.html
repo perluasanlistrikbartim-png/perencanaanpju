@@ -353,6 +353,123 @@ header{
   font-size:12px;
   opacity:.7;
 }
+   /* =====================================================
+   PANEL INPUT DATA — FINAL (DESKTOP & MOBILE)
+===================================================== */
+
+#popup{
+  position:fixed;
+  top:180px;                 /* di bawah header */
+  right:20px;
+  width:380px;
+  max-height:calc(100vh - 220px);
+  overflow-y:auto;
+
+  background:#020617;
+  border:2px solid #f59e0b;
+  border-radius:16px;
+  box-shadow:0 25px 50px rgba(0,0,0,.75);
+  z-index:6000;
+
+  display:none;              /* default tertutup */
+}
+
+/* ===== HEADER ===== */
+#popup .popup-head{
+  background:#0b3a66;
+  padding:10px 14px;
+  color:#f59e0b;
+  font-weight:700;
+  font-size:14px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  border-bottom:2px solid #f59e0b;
+  border-radius:14px 14px 0 0;
+}
+
+/* ===== BODY ===== */
+#popup .popup-body{
+  padding:14px;
+}
+
+/* ===== LABEL ===== */
+#popup .popup-body label{
+  display:block;
+  margin-top:10px;
+  margin-bottom:4px;
+  font-size:12px;
+  color:#94a3b8;
+}
+
+/* ===== INPUT & SELECT ===== */
+#popup .popup-body input,
+#popup .popup-body select{
+  width:100%;
+  padding:7px 9px;
+
+  background:#020617;
+  color:#e5e7eb;
+
+  border:1px solid #334155;
+  border-radius:6px;
+  font-size:13px;
+}
+
+/* readonly field (panjang jaringan) */
+#popup .popup-body input[readonly]{
+  background:#020617;
+  border:1px dashed #475569;
+  color:#cbd5e1;
+}
+
+/* ===== FILE INPUT ===== */
+#popup .popup-body input[type="file"]{
+  padding:4px;
+  font-size:12px;
+  color:#cbd5e1;
+}
+
+/* ===== BUTTON ===== */
+#popup .popup-body button{
+  width:100%;
+  margin-top:14px;
+  padding:9px;
+
+  background:#f59e0b;
+  color:#020617;
+
+  border:none;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+
+  transition:all .2s ease;
+}
+
+#popup .popup-body button:hover{
+  background:#fbbf24;
+}
+
+/* =====================================================
+   MOBILE MODE — BOTTOM SHEET
+===================================================== */
+@media(max-width:768px){
+
+  #popup{
+    left:10px;
+    right:10px;
+    bottom:10px;
+    top:auto;
+
+    width:auto;
+    max-height:80vh;
+    border-radius:18px;
+  }
+}
+
 </style>
 
 

@@ -299,8 +299,24 @@ const layer = L.layerGroup().addTo(map);
 const plnIcon = L.icon({
   iconUrl:'assets/img/pln.png',
   iconSize:[36,36],
-  iconAnchor:[18,18]
+  iconAnchor:[18,18],
+  popupAnchor:[0,-16]
 });
+
+/* ================= WARNA PER KECAMATAN (MUTED / DINAS) ================= */
+const WARNA_KECAMATAN = {
+  "Dusun Timur":        { main:"#6b7280", shadow:"#374151" },
+  "Dusun Tengah":       { main:"#6b4f3f", shadow:"#3f2d20" },
+  "Pematang Karau":     { main:"#556b2f", shadow:"#2f3b18" },
+  "Raren Batuah":       { main:"#4b5563", shadow:"#1f2937" },
+  "Paku":               { main:"#5f7161", shadow:"#37423d" },
+  "Karusen Janang":     { main:"#7c6f64", shadow:"#3e342e" },
+  "Awang":              { main:"#5b6770", shadow:"#2e3440" },
+  "Paju Epat":          { main:"#6d5c45", shadow:"#3a2f21" },
+  "Benua Lima":         { main:"#5a5f4b", shadow:"#2f3324" },
+  "Patangkep Tutui":    { main:"#4a5d73", shadow:"#1f2937" }
+};
+const WARNA_DEFAULT = { main:"#6b7280", shadow:"#374151" };
 
 /* ================= LOAD MASTER WILAYAH ================= */
 fetch(API+'?action=master')
@@ -334,12 +350,13 @@ document.getElementById('kecamatanFilter').onchange = e=>{
   renderPolylineByKecamatan(e.target.value);
 };
 
-/* ================= RENDER POLYLINE ================= */
+/* ================= RENDER POLYLINE (FINAL FIX) ================= */
 function renderPolylineByKecamatan(kecamatan){
   layer.clearLayers();
-  if(!kecamatan) return;
+  if(!kecamatan) return; // ⛔ tidak tampil jika belum pilih
 
   const lines = [];
+  const warna = WARNA_KECAMATAN[kecamatan] || WARNA_DEFAULT;
 
   polylineCache.forEach(pl=>{
     const row = dataJaringan.find(d=>d.id_jaringan===pl.id_jaringan);
@@ -347,13 +364,39 @@ function renderPolylineByKecamatan(kecamatan){
     if(row.kecamatan !== kecamatan) return;
 
     const coords = JSON.parse(pl.polyline_json);
+    if(!coords || coords.length < 2) return;
 
+    /* ===== SHADOW (EFEK 3D) ===== */
+    L.polyline(coords,{
+      color: warna.shadow,
+      weight:10,
+      opacity:0.85,
+      lineCap:'round',
+      lineJoin:'round'
+    }).addTo(layer);
+
+    /* ===== GARIS UTAMA ===== */
     const line = L.polyline(coords,{
-      color:'#facc15',
-      weight:4
+      color: warna.main,
+      weight:6,
+      opacity:1,
+      lineCap:'round',
+      lineJoin:'round'
     }).addTo(layer);
 
     lines.push(line);
+
+    /* ===== MARKER PLN DI TENGAH GARIS ===== */
+    const midIndex = Math.floor(coords.length/2);
+    const midPoint = coords[midIndex];
+
+    L.marker(midPoint,{icon:plnIcon,zIndexOffset:1000})
+      .bindPopup(`
+        <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
+        <b>Desa</b><br>${row.desa_kelurahan}<br><br>
+        <b>Panjang</b><br>${row.panjang_km || '-'} km
+      `)
+      .addTo(layer);
   });
 
   if(lines.length){
@@ -464,6 +507,7 @@ map.whenReady(()=>{
   loadAllData();
 });
 </script>
+
 
 
 </body>

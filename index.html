@@ -257,6 +257,33 @@ th{
 .popup-kecamatan-body b {
   color: #374151;
 }
+/* ================= ICON PLN 3D ================= */
+.icon-pln-3d {
+  filter:
+    drop-shadow(0 3px 3px rgba(0,0,0,0.35))
+    drop-shadow(0 6px 8px rgba(0,0,0,0.25));
+  transform: translateY(-1px);
+}
+.leaflet-marker-icon.icon-pln-3d:hover {
+  transform: translateY(-2px) scale(1.05);
+  filter:
+    drop-shadow(0 4px 4px rgba(0,0,0,0.4))
+    drop-shadow(0 8px 12px rgba(0,0,0,0.3));
+}
+/* ================= INTERAKSI TABEL & MAP ================= */
+#tabelJaringan tbody tr {
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+#tabelJaringan tbody tr:hover {
+  background:#fef3c7;
+}
+
+#tabelJaringan tbody tr.active {
+  background:#fde68a;
+  font-weight:600;
+}
 
 </style>
 
@@ -291,6 +318,22 @@ th{
 </header>
 
 <div id="map"></div>
+<div class="table-wrapper">
+  <table id="tabelJaringan">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Kecamatan</th>
+        <th>Desa / Kelurahan</th>
+        <th>Ruas Jalan</th>
+        <th>Jumlah Tiang</th>
+        <th>Panjang (km)</th>
+        <th>Track</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
 
 <!-- POPUP -->
 <div id="popup">
@@ -321,11 +364,13 @@ const layer = L.layerGroup().addTo(map);
 
 /* ================= ICON PLN ================= */
 const plnIcon = L.icon({
-  iconUrl:'pln.png',
+  iconUrl:'assets/img/pln.png',
   iconSize:[36,36],
   iconAnchor:[18,18],
-  popupAnchor:[0,-16]
+  popupAnchor:[0,-16],
+  className:'icon-pln-3d'
 });
+
 
 /* ================= WARNA PER KECAMATAN (MUTED / DINAS) ================= */
 const WARNA_KECAMATAN = {
@@ -373,22 +418,30 @@ document.getElementById('kecamatanFilter').onchange = e=>{
   closePopup();
   renderPolylineByKecamatan(e.target.value);
 };
+let mapObjects = {}; 
+// { id_jaringan : { line, marker, rowEl } }
 
 /* ================= RENDER POLYLINE (FINAL FIX) ================= */
 function renderPolylineByKecamatan(kecamatan){
   layer.clearLayers();
-  if(!kecamatan) return; // ⛔ tidak tampil jika belum pilih
+  mapObjects = {};
 
-  const lines = [];
-  const warna = WARNA_KECAMATAN[kecamatan] || WARNA_DEFAULT;
+  const tbody = document.querySelector('#tabelJaringan tbody');
+  if(tbody) tbody.innerHTML = '';
+
+  let nomor = 1;
 
   polylineCache.forEach(pl=>{
     const row = dataJaringan.find(d=>d.id_jaringan===pl.id_jaringan);
     if(!row) return;
-    if(row.kecamatan !== kecamatan) return;
+
+    // filter kecamatan (kalau kosong = semua)
+    if(kecamatan && row.kecamatan !== kecamatan) return;
 
     const coords = JSON.parse(pl.polyline_json);
     if(!coords || coords.length < 2) return;
+
+    const warna = WARNA_KECAMATAN[row.kecamatan] || WARNA_DEFAULT;
 
     /* ===== SHADOW (EFEK 3D) ===== */
     L.polyline(coords,{
@@ -408,40 +461,94 @@ function renderPolylineByKecamatan(kecamatan){
       lineJoin:'round'
     }).addTo(layer);
 
-    lines.push(line);
+    /* ===== MARKER PLN ===== */
+    const midPoint = coords[Math.floor(coords.length/2)];
+    const marker = L.marker(midPoint,{
+      icon:plnIcon,
+      zIndexOffset:1000
+    })
+    .bindPopup(`
+      <div class="popup-kecamatan-header"
+           style="background:${warna.main};border-bottom:3px solid ${warna.shadow}">
+        ${row.kecamatan}
+      </div>
 
-    /* ===== MARKER PLN DI TENGAH GARIS ===== */
-    const midIndex = Math.floor(coords.length/2);
-    const midPoint = coords[midIndex];
+      <div class="popup-kecamatan-body">
+        <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
+        <b>Desa</b><br>${row.desa_kelurahan}<br><br>
+        <b>Jumlah Tiang</b><br>${row.jumlah_tiang || '-'}<br><br>
+        <b>Panjang</b><br>${row.panjang_jaringan || '-'} km
+      </div>
+    `)
+    .addTo(layer);
 
-    L.marker(midPoint,{icon:plnIcon,zIndexOffset:1000})
-      .bindPopup(`
-  <div class="popup-kecamatan-header"
-       style="background:${warna.main};border-bottom:3px solid ${warna.shadow}">
-    ${row.kecamatan}
-  </div>
+    /* ===== SIMPAN RELASI MAP ↔ TABEL ===== */
+    mapObjects[row.id_jaringan] = { line, marker };
 
-  <div class="popup-kecamatan-body">
-    <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
+    /* ===== ISI TABEL ===== */
+    if(tbody){
+      const gmapLink =
+        'https://www.google.com/maps/dir/' +
+        coords.map(c=>`${c[0]},${c[1]}`).join('/');
 
-    <b>Desa</b><br>${row.desa_kelurahan}<br><br>
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${nomor++}</td>
+        <td>${row.kecamatan}</td>
+        <td>${row.desa_kelurahan}</td>
+        <td>${row.ruas_jalan}</td>
+        <td>${row.jumlah_tiang}</td>
+        <td>${row.panjang_jaringan}</td>
+        <td><a href="${gmapLink}" target="_blank">Buka</a></td>
+      `;
 
-    <b>Jumlah Tiang</b><br>${row.jumlah_tiang || '-'}<br><br>
+      tr.onclick = ()=>{
+        resetHighlight();
+        tr.classList.add('active');
+        line.setStyle({ color:'#dc2626', weight:8 });
+        marker.openPopup();
+        map.panTo(marker.getLatLng());
+      };
 
-    <b>Panjang</b><br>${row.panjang_jaringan || '-'} km
-  </div>
-`)
+      marker.on('click',()=>{
+        resetHighlight();
+        tr.classList.add('active');
+        line.setStyle({ color:'#dc2626', weight:8 });
+        tr.scrollIntoView({behavior:'smooth', block:'center'});
+      });
 
-
-
-      .addTo(layer);
+      tbody.appendChild(tr);
+    }
   });
 
-  if(lines.length){
-    const group = L.featureGroup(lines);
-    map.fitBounds(group.getBounds(), {padding:[40,40]});
+  if(Object.keys(mapObjects).length){
+    const bounds = L.featureGroup(
+      Object.values(mapObjects).map(o=>o.line)
+    ).getBounds();
+    map.fitBounds(bounds,{padding:[40,40]});
   }
 }
+/* ================= RESET SOROT (WAJIB DI LUAR) ================= */
+function resetHighlight(){
+  Object.values(mapObjects).forEach(o=>{
+    const kec = o.rowEl
+      ? o.rowEl.children[1].innerText
+      : null;
+
+    const warna = WARNA_KECAMATAN[kec] || WARNA_DEFAULT;
+
+    o.line.setStyle({
+      color: warna.main,
+      weight: 6
+    });
+
+    if(o.rowEl){
+      o.rowEl.classList.remove('active');
+    }
+  });
+}
+
+
 
 /* ================= INPUT FORM ================= */
 function openInput(){

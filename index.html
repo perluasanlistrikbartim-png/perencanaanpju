@@ -278,20 +278,14 @@ th{
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
+  <script>
 /* ================= CONFIG ================= */
 const API = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
-/* ================= DATA JARINGAN ================= */
-let dataJaringan = [];
 
-function loadDataJaringan(){
-  fetch(API + '?action=data')
-    .then(r => r.json())
-    .then(j => {
-      dataJaringan = j.data;
-      console.log('DATA JARINGAN:', dataJaringan);
-    });
-}
+/* ================= GLOBAL CACHE ================= */
+let dataJaringan = [];
+let polylineCache = [];
+let masterWilayah = [];
 
 /* ================= MAP ================= */
 const map = L.map('map',{minZoom:9,maxZoom:19})
@@ -308,26 +302,65 @@ const plnIcon = L.icon({
   iconAnchor:[18,18]
 });
 
-/* ================= MASTER WILAYAH ================= */
-let masterWilayah = [];
-
+/* ================= LOAD MASTER WILAYAH ================= */
 fetch(API+'?action=master')
 .then(r=>r.json())
 .then(j=>{
-  masterWilayah = j.data;
-  const kec = [...new Set(j.data.map(d=>d.kecamatan))];
+  masterWilayah = j.data || [];
+  const kec = [...new Set(masterWilayah.map(d=>d.kecamatan))];
   const sel = document.getElementById('kecamatanFilter');
   kec.forEach(k=>{
     sel.innerHTML += `<option value="${k}">${k}</option>`;
   });
 });
 
-/* ================= FILTER (BELUM RENDER POLYLINE) ================= */
-document.getElementById('kecamatanFilter').onchange = ()=>{
-  layer.clearLayers();
+/* ================= LOAD DATA JARINGAN + POLYLINE ================= */
+function loadAllData(){
+  Promise.all([
+    fetch(API+'?action=data').then(r=>r.json()),
+    fetch(API+'?action=polyline').then(r=>r.json())
+  ]).then(([d,p])=>{
+    dataJaringan  = d.data || [];
+    polylineCache = p.data || [];
+
+    console.log('DATA JARINGAN:', dataJaringan);
+    console.log('POLYLINE CACHE:', polylineCache);
+  });
+}
+
+/* ================= FILTER KECAMATAN ================= */
+document.getElementById('kecamatanFilter').onchange = e=>{
   closePopup();
-  // rendering data_jaringan + polyline akan ditambahkan tahap berikut
+  renderPolylineByKecamatan(e.target.value);
 };
+
+/* ================= RENDER POLYLINE ================= */
+function renderPolylineByKecamatan(kecamatan){
+  layer.clearLayers();
+  if(!kecamatan) return;
+
+  const lines = [];
+
+  polylineCache.forEach(pl=>{
+    const row = dataJaringan.find(d=>d.id_jaringan===pl.id_jaringan);
+    if(!row) return;
+    if(row.kecamatan !== kecamatan) return;
+
+    const coords = JSON.parse(pl.polyline_json);
+
+    const line = L.polyline(coords,{
+      color:'#facc15',
+      weight:4
+    }).addTo(layer);
+
+    lines.push(line);
+  });
+
+  if(lines.length){
+    const group = L.featureGroup(lines);
+    map.fitBounds(group.getBounds(), {padding:[40,40]});
+  }
+}
 
 /* ================= INPUT FORM ================= */
 function openInput(){
@@ -345,56 +378,25 @@ function openInput(){
     <select id="f_desa">
       <option value="">-- Pilih Desa --</option>
     </select>
-   <label>Ruas Jalan</label>
-   <input id="f_ruas" type="text" placeholder="Contoh: Tamiang Layang-Dorong">
+
+    <label>Ruas Jalan</label>
+    <input id="f_ruas" type="text">
 
     <label>Jumlah Tiang</label>
-    <input id="f_tiang" type="number" min="0">
+    <input id="f_tiang" type="number">
 
     <label>Panjang Jaringan (km)</label>
     <input value="otomatis dari tracking" readonly>
 
     <label>Upload Data Tracking</label>
     <input type="file" id="f_file" accept=".kml,.gpx,.geojson">
-    <small>Upload aktif setelah data disimpan</small>
 
     <button style="margin-top:12px" onclick="saveData()">Simpan</button>
   `;
   openPopup();
 }
-function uploadTracking(idJaringan){
-  const fileInput = document.getElementById('f_file');
-  const file = fileInput.files[0];
-  if(!file) return;
 
-  const reader = new FileReader();
-
-  reader.onload = function(){
-    const base64 = reader.result.split(',')[1];
-
-    fetch(API,{
-      method:'POST',
-      body:JSON.stringify({
-        action:'upload_tracking',
-        id_jaringan:idJaringan,
-        filename:file.name,
-        mimeType:file.type || 'application/octet-stream',
-        base64:base64
-      })
-    })
-    .then(r=>r.json())
-    .then(j=>{
-      if(j.status==='OK'){
-        alert('✅ Data & file berhasil disimpan');
-      }else{
-        alert('❌ '+j.message);
-      }
-    });
-  };
-
-  reader.readAsDataURL(file);
-}
-
+/* ================= LOAD DESA ================= */
 function loadDesa(){
   const kec = f_kec.value;
   const desa = masterWilayah
@@ -407,103 +409,62 @@ function loadDesa(){
 
 /* ================= SAVE DATA ================= */
 function saveData(){
-  // ================= VALIDASI =================
   if(!f_kec.value || !f_desa.value || !f_ruas.value || !f_tiang.value){
-    alert('Lengkapi Kecamatan, Desa/Kelurahan, Ruas Jalan, dan Jumlah Tiang');
+    alert('Lengkapi semua field');
     return;
   }
 
-  const payload = {
-    kecamatan      : f_kec.value,
-    desa_kelurahan : f_desa.value,
-    ruas_jalan     : f_ruas.value,
-    jumlah_tiang   : Number(f_tiang.value),
-    kode_kecamatan : f_kec.value.substring(0,2).toUpperCase()
-  };
-
-  // ================= KIRIM KE GAS =================
-  fetch(API, {
-  method: 'POST',
-  body: JSON.stringify({
-    action: 'save_data',
-    payload: payload
+  fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'save_data',
+      payload:{
+        kecamatan:f_kec.value,
+        desa_kelurahan:f_desa.value,
+        ruas_jalan:f_ruas.value,
+        jumlah_tiang:Number(f_tiang.value),
+        kode_kecamatan:f_kec.value.substring(0,2).toUpperCase()
+      }
+    })
   })
-})
-
-  .then(res => {
-    if(!res.ok) throw new Error('Gagal koneksi ke server');
-    return res.json();
-  })
-  .then(j => {
-    if(j.status !== 'OK'){
-      alert('❌ ' + j.message);
-      return;
+  .then(r=>r.json())
+  .then(j=>{
+    if(j.status!=='OK'){
+      alert(j.message); return;
     }
 
-    const idJaringan = j.id_jaringan;
+    const id = j.id_jaringan;
+    const file = document.getElementById('f_file').files[0];
+    if(!file){ alert('Data tersimpan'); closePopup(); return; }
 
-    // ================= UPLOAD TRACKING (OPSIONAL) =================
-    const fileInput = document.getElementById('f_file');
-
-    if(fileInput && fileInput.files.length > 0){
-      uploadTracking(idJaringan); // upload GPX/KML
-    } else {
-      alert('✅ Data tersimpan\nID: ' + idJaringan);
-    }
-
+    const fr = new FileReader();
+    fr.onload = ()=>{
+      fetch(API,{
+        method:'POST',
+        body:JSON.stringify({
+          action:'upload_tracking',
+          id_jaringan:id,
+          filename:file.name,
+          mimeType:file.type,
+          base64:fr.result.split(',')[1]
+        })
+      }).then(()=>alert('Data & tracking tersimpan'));
+    };
+    fr.readAsDataURL(file);
     closePopup();
-  })
-  .catch(err => {
-    console.error(err);
-    alert('❌ Terjadi kesalahan saat menyimpan data');
   });
 }
-function loadPolyline(filterKec=''){
-  fetch(API+'?action=polyline')
-    .then(r=>r.json())
-    .then(j=>{
-      layer.clearLayers();
-
-      j.data.forEach(p=>{
-        // cari kecamatan dari data_jaringan
-        const dj = dataJaringan.find(d=>d.id_jaringan === p.id_jaringan);
-        if(!dj) return;
-
-        // FILTER KECAMATAN
-        if(filterKec && dj.kecamatan !== filterKec) return;
-
-        const coords = JSON.parse(p.polyline_json);
-
-        const poly = L.polyline(coords,{
-          color:'#facc15',
-          weight:4
-        }).addTo(layer);
-
-        // OPTIONAL: popup info
-        poly.bindPopup(`
-          <b>${dj.ruas_jalan}</b><br>
-          Kecamatan: ${dj.kecamatan}<br>
-          Panjang: ${p.panjang_m} m
-        `);
-      });
-    });
-}
-
-
-
-
-map.whenReady(() => {
-  loadDataJaringan();   // ⬅️ PENTING
-  loadPolyline();
-});
-
-
 
 /* ================= POPUP ================= */
 function openPopup(){ popup.style.display='block'; }
 function closePopup(){ popup.style.display='none'; }
-   
+
+/* ================= INIT ================= */
+map.whenReady(()=>{
+  loadAllData();
+});
 </script>
+
 
 </body>
 </html>

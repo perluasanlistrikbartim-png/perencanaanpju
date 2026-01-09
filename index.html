@@ -234,6 +234,30 @@ th{
     width:auto;
   }
 }
+   /* ================= POPUP WARNA DINAMIS ================= */
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+  padding: 0;
+}
+
+.popup-kecamatan-header {
+  padding: 8px 12px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px 10px 0 0;
+}
+
+.popup-kecamatan-body {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.popup-kecamatan-body b {
+  color: #374151;
+}
+
 </style>
 
 </head>
@@ -392,10 +416,24 @@ function renderPolylineByKecamatan(kecamatan){
 
     L.marker(midPoint,{icon:plnIcon,zIndexOffset:1000})
       .bindPopup(`
-        <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
-        <b>Desa</b><br>${row.desa_kelurahan}<br><br>
-        <b>Panjang</b><br>${row.panjang_km || '-'} km
-      `)
+  <div class="popup-kecamatan-header"
+       style="background:${warna.main};border-bottom:3px solid ${warna.shadow}">
+    ${row.kecamatan}
+  </div>
+
+  <div class="popup-kecamatan-body">
+    <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
+
+    <b>Desa</b><br>${row.desa_kelurahan}<br><br>
+
+    <b>Jumlah Tiang</b><br>${row.jumlah_tiang || '-'}<br><br>
+
+    <b>Panjang</b><br>${row.panjang_jaringan || '-'} km
+  </div>
+`)
+
+
+
       .addTo(layer);
   });
 

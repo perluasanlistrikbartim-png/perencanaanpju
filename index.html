@@ -8,48 +8,42 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-/* ===============================
-   GLOBAL
-================================ */
+/* =====================================================
+   GLOBAL — DARK PUPR THEME
+===================================================== */
 *{box-sizing:border-box}
 
 body{
   margin:0;
   font-family:Segoe UI, Arial, sans-serif;
-  background:#f4f6f8;
-  color:#1f2937;
+  background:#020617;            /* gelap elegan */
+  color:#e5e7eb;
 }
 
-/* ===============================
-   ANIMASI
-================================ */
+/* =====================================================
+   ANIMASI HALUS
+===================================================== */
 @keyframes softPulse{
   0%{box-shadow:0 0 0 rgba(244,196,48,0)}
-  50%{box-shadow:0 0 12px rgba(244,196,48,.35)}
+  50%{box-shadow:0 0 10px rgba(244,196,48,.25)}
   100%{box-shadow:0 0 0 rgba(244,196,48,0)}
 }
 
-@keyframes fadeSlide{
-  from{opacity:0;transform:translateY(10px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
-@keyframes kilatHeader{
+@keyframes kilat{
   0%{left:-120%}
   40%{left:120%}
   100%{left:120%}
 }
 
-/* ===============================
-   HEADER
-================================ */
+/* =====================================================
+   HEADER — PUPR
+===================================================== */
 header{
   position:fixed;
   top:0;left:0;right:0;
-  background:#0f4c81;
+  background:#0b3a66;
   z-index:1000;
-  border-bottom:4px solid #f4c430;
-  animation:softPulse 6s ease-in-out infinite;
+  border-bottom:3px solid #f59e0b;   /* ORANGE PLN */
 }
 
 .header-top{
@@ -58,18 +52,12 @@ header{
   padding:10px 16px;
 }
 
-.header-logo{
-  width:70px;
-  display:flex;
-  justify-content:center;
-}
-
-.header-logo img{height:58px}
+.header-logo img{height:56px}
 
 .header-title{
   flex:1;
   text-align:center;
-  color:#fff;
+  color:#e5e7eb;
 }
 
 .header-title .title-main{
@@ -80,121 +68,120 @@ header{
 
 .header-title .title-sub{
   font-size:13px;
-  opacity:.95;
+  opacity:.9;
 }
 
-/* ===============================
+/* =====================================================
    BAR KONTROL
-================================ */
+===================================================== */
 .header-controls{
   display:flex;
   gap:10px;
   padding:8px 16px;
-  background:#e9f1f8;
-}
-
-.header-controls select,
-.header-controls button{
-  padding:6px 12px;
-  border-radius:6px;
-  font-size:14px;
+  background:#0f172a;
+  border-top:1px solid #1e293b;
 }
 
 .header-controls select{
-  border:1px solid #cbd5e1;
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid #334155;
+  padding:6px 10px;
+  border-radius:6px;
 }
 
 .header-controls button{
+  background:#f59e0b;
+  color:#020617;
   border:none;
-  background:#f4c430;
+  padding:6px 14px;
+  border-radius:6px;
   font-weight:600;
   cursor:pointer;
-  animation:softPulse 5s ease-in-out infinite;
+  animation:softPulse 6s ease-in-out infinite;
 }
 
-.header-controls button:hover{
-  background:#e6b800;
-  transform:translateY(-1px);
-}
-
-/* ===============================
-   MAP
-================================ */
+/* =====================================================
+   MAP CONTAINER
+===================================================== */
 #map{
   margin-top:150px;
-  width:100%;
   height:60vh;
+  width:100%;
+  border-top:3px solid #f59e0b;
+  border-bottom:3px solid #f59e0b;
 }
 
-/* ===============================
+/* =====================================================
    POPUP LEAFLET
-================================ */
+===================================================== */
 .leaflet-popup-content-wrapper{
-  border-radius:10px;
   padding:0;
+  border-radius:10px;
+  background:#020617;
+  border:2px solid #f59e0b;
 }
 
 .popup-kecamatan-header{
   padding:8px 12px;
-  color:#fff;
-  font-weight:600;
-  border-radius:10px 10px 0 0;
+  color:#020617;
+  font-weight:700;
 }
 
 .popup-kecamatan-body{
   padding:10px 12px;
   font-size:13px;
+  color:#e5e7eb;
 }
 
-.popup-kecamatan-body b{color:#374151}
+.popup-kecamatan-body b{
+  color:#f59e0b;
+}
 
-/* ===============================
+/* =====================================================
    ICON PLN 3D
-================================ */
+===================================================== */
 .icon-pln-3d{
   filter:
-    drop-shadow(0 3px 3px rgba(0,0,0,.35))
-    drop-shadow(0 6px 8px rgba(0,0,0,.25));
-  transform:translateY(-1px);
+    drop-shadow(0 2px 2px rgba(0,0,0,.6))
+    drop-shadow(0 6px 10px rgba(0,0,0,.8));
 }
 
-.leaflet-marker-icon.icon-pln-3d:hover{
-  transform:translateY(-2px) scale(1.05);
-  filter:
-    drop-shadow(0 4px 4px rgba(0,0,0,.4))
-    drop-shadow(0 8px 12px rgba(0,0,0,.3));
-}
-
-/* ===============================
-   TABEL GIS PREMIUM
-================================ */
+/* =====================================================
+   TABLE WRAPPER — BOUNDARY ORANGE
+===================================================== */
 .table-wrapper{
-  background:linear-gradient(180deg,#0f4c81,#0b355c);
-  padding:14px;
-  border-radius:12px;
-  box-shadow:0 12px 28px rgba(0,0,0,.25);
-  overflow-x:auto;
+  margin:14px;
+  background:#020617;
+  border:2px solid #f59e0b;
+  border-radius:14px;
+  box-shadow:
+    0 0 0 2px rgba(245,158,11,.15),
+    0 18px 40px rgba(0,0,0,.6);
+  overflow:hidden;
 }
 
+/* =====================================================
+   TABLE
+===================================================== */
 #tabelJaringan{
   width:100%;
   border-collapse:separate;
   border-spacing:0;
-  background:#fff;
-  border-radius:10px;
-  overflow:hidden;
+  background:#020617;
+  color:#e5e7eb;
   font-size:13px;
 }
 
+/* ===== HEADER ===== */
 #tabelJaringan thead th{
-  background:linear-gradient(180deg,#1e6091,#0f4c81);
-  color:#e6f4ff;
+  position:relative;
+  background:#0b3a66;
+  color:#e5e7eb;
+  padding:10px 8px;
   font-size:12px;
   text-transform:uppercase;
-  letter-spacing:.05em;
-  padding:10px 8px;
-  position:relative;
-  border-bottom:2px solid #f4c430;
+  border-bottom:2px solid #f59e0b;
 }
 
 #tabelJaringan thead th::after{
@@ -207,58 +194,47 @@ header{
   background:linear-gradient(
     120deg,
     transparent,
-    rgba(244,196,48,.35),
+    rgba(245,158,11,.35),
     transparent
   );
-  animation:kilatHeader 7s linear infinite;
+  animation:kilat 8s linear infinite;
 }
 
+/* ===== BODY ===== */
 #tabelJaringan tbody td{
   padding:9px 10px;
-  border-bottom:1px solid #e5e7eb;
+  border-bottom:1px solid #1e293b;
 }
 
-#tabelJaringan tbody tr{
-  transition:.2s ease;
-  cursor:pointer;
-}
-
+/* ===== HOVER ===== */
 #tabelJaringan tbody tr:hover{
-  background:linear-gradient(90deg,#fef9c3,#fff);
-  box-shadow:inset 4px 0 0 #f4c430;
+  background:#020617;
+  box-shadow:inset 4px 0 0 #f59e0b;
 }
 
+/* ===== ACTIVE ===== */
 #tabelJaringan tbody tr.active{
-  background:linear-gradient(90deg,#fde68a,#fffbea);
-  font-weight:600;
+  background:#020617;
   box-shadow:
-    inset 5px 0 0 #f4c430,
-    0 0 14px rgba(244,196,48,.45);
+    inset 6px 0 0 #f59e0b,
+    0 0 16px rgba(245,158,11,.35);
+  font-weight:600;
 }
 
-#tabelJaringan td:first-child{
-  text-align:center;
-  font-weight:700;
-  color:#0f4c81;
-}
-
+/* ===== LINK TRACK ===== */
 #tabelJaringan a{
-  padding:4px 8px;
-  border-radius:6px;
-  background:linear-gradient(180deg,#e0f2fe,#bae6fd);
-  color:#075985;
+  color:#f59e0b;
   font-weight:600;
   text-decoration:none;
 }
 
 #tabelJaringan a:hover{
-  background:linear-gradient(180deg,#bae6fd,#7dd3fc);
-  box-shadow:0 0 10px rgba(56,189,248,.6);
+  text-decoration:underline;
 }
 
-/* ===============================
+/* =====================================================
    RESPONSIVE HP
-================================ */
+===================================================== */
 @media(max-width:768px){
   #map{height:50vh}
 
@@ -266,25 +242,88 @@ header{
 
   #tabelJaringan tbody tr{
     display:block;
-    margin-bottom:10px;
-    border-radius:10px;
-    box-shadow:0 6px 18px rgba(0,0,0,.15);
+    margin:10px;
+    border:1px solid #f59e0b;
+    border-radius:12px;
   }
 
   #tabelJaringan tbody td{
     display:flex;
     justify-content:space-between;
-    border:none;
-    border-bottom:1px solid #e5e7eb;
+    border-bottom:1px solid #1e293b;
   }
 
   #tabelJaringan tbody td::before{
     content:attr(data-label);
+    color:#f59e0b;
     font-weight:600;
-    color:#0f4c81;
   }
 }
+   /* =====================================================
+   FOOTER — DARK PUPR + ORANGE BOUNDARY
+===================================================== */
+.app-footer{
+  margin-top:20px;
+  background:#020617;
+  border-top:2px solid #f59e0b;
+  box-shadow:0 -8px 30px rgba(0,0,0,.6);
+}
+
+.footer-inner{
+  max-width:1200px;
+  margin:auto;
+  padding:18px 16px;
+  text-align:center;
+  color:#e5e7eb;
+}
+
+.footer-title{
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:#f59e0b;
+  margin-bottom:6px;
+}
+
+.footer-desc{
+  font-size:13px;
+  line-height:1.5;
+  opacity:.9;
+}
+
+.footer-present{
+  margin-top:8px;
+  font-size:13px;
+  color:#cbd5f5;
+}
+
+.footer-present b{
+  color:#f59e0b;
+}
+
+.footer-meta{
+  margin-top:10px;
+  font-size:12px;
+  opacity:.7;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .footer-inner{
+    padding:14px 12px;
+  }
+
+  .footer-desc{
+    font-size:12px;
+  }
+
+  .footer-present{
+    font-size:12px;
+  }
+}
+
 </style>
+
 
 
 </head>
@@ -651,8 +690,32 @@ function closePopup(){ popup.style.display='none'; }
 map.whenReady(()=>{
   loadAllData();
 });
+document.getElementById('tahunFooter').innerText = new Date().getFullYear();
 </script>
 
+<footer class="app-footer">
+  <div class="footer-inner">
+
+    <div class="footer-title">
+      MASTER PLAN PJU SWAKELOLA
+    </div>
+
+    <div class="footer-desc">
+      Tim Master Plan PJU Kabupaten Barito Timur<br>
+      Dinas Pekerjaan Umum, Penataan Ruang, Perumahan dan Kawasan Permukiman
+      Kabupaten Barito Timur
+    </div>
+
+    <div class="footer-present">
+      Presented in Web GIS by <b>Septeriady Ngubel</b>
+    </div>
+
+    <div class="footer-meta">
+      Tahun  <span id="tahunFooter"></span> • Kabupaten Barito Timur
+    </div>
+
+  </div>
+</footer>
 
 
 </body>

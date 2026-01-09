@@ -312,6 +312,35 @@ header{
   .footer-inner{
     padding:14px 12px;
   }
+/* =====================================================
+   PATCH — BATAS ANTAR KOLOM TABEL (EYECATCHING)
+===================================================== */
+
+/* === GARIS VERTIKAL ANTAR KOLOM === */
+#tabelJaringan thead th,
+#tabelJaringan tbody td{
+  border-right:1px solid rgba(245,158,11,.35); /* orange PLN halus */
+}
+
+/* kolom terakhir jangan ada garis kanan */
+#tabelJaringan thead th:last-child,
+#tabelJaringan tbody td:last-child{
+  border-right:none;
+}
+
+/* === GARIS HORIZONTAL DIPERTEGAS === */
+#tabelJaringan tbody tr{
+  border-bottom:1px solid rgba(245,158,11,.25);
+}
+
+/* === AKSEN SAAT HOVER (GRID TERASA HIDUP) === */
+#tabelJaringan tbody tr:hover td{
+  background:linear-gradient(
+    90deg,
+    rgba(245,158,11,.08),
+    rgba(2,6,23,.0)
+  );
+}
 
   .footer-desc{
     font-size:12px;

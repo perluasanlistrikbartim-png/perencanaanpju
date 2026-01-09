@@ -590,6 +590,67 @@ header{
     display:none;
   }
 }
+/* =====================================================
+   LOCK MOBILE MODE — CARD ONLY
+===================================================== */
+@media(max-width:768px){
+
+  #tabelJaringan{
+    display:block !important;
+  }
+
+  #tabelJaringan thead{
+    display:none !important;
+  }
+
+  #tabelJaringan tbody,
+  #tabelJaringan tbody tr,
+  #tabelJaringan tbody td{
+    display:block !important;
+    width:100% !important;
+  }
+}
+/* =====================================================
+   MOBILE — TABEL SCROLL HORIZONTAL (STABIL)
+===================================================== */
+@media(max-width:768px){
+
+  /* wrapper jadi scroll */
+  .table-wrapper{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:12px;
+    padding:8px;
+    border-radius:14px;
+  }
+
+  /* tabel jangan dipecah */
+  #tabelJaringan{
+    display:table;
+    min-width:760px;   /* PENTING: paksa lebar */
+    font-size:12px;
+  }
+
+  #tabelJaringan thead th,
+  #tabelJaringan tbody td{
+    white-space:nowrap;
+  }
+
+  /* header tetap kelihatan */
+  #tabelJaringan thead{
+    display:table-header-group;
+  }
+
+  /* baris tetap table-row */
+  #tabelJaringan tbody tr{
+    display:table-row;
+  }
+
+  /* HILANGKAN SEMUA STYLE CARD */
+  #tabelJaringan tbody td::before{
+    content:none !important;
+  }
+}
 
 </style>
 
@@ -802,14 +863,16 @@ function renderPolylineByKecamatan(kecamatan){
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${nomor++}</td>
-        <td>${row.kecamatan}</td>
-        <td>${row.desa_kelurahan}</td>
-        <td>${row.ruas_jalan}</td>
-        <td>${row.jumlah_tiang}</td>
-        <td>${row.panjang_jaringan}</td>
-        <td><a href="${gmapLink}" target="_blank">Buka</a></td>
-      `;
+  <td data-label="No">${nomor++}</td>
+  <td data-label="Kecamatan">${row.kecamatan}</td>
+  <td data-label="Desa / Kelurahan">${row.desa_kelurahan}</td>
+  <td data-label="Ruas Jalan">${row.ruas_jalan}</td>
+  <td data-label="Jumlah Tiang">${row.jumlah_tiang}</td>
+  <td data-label="Panjang (km)">${row.panjang_jaringan}</td>
+  <td data-label="Track">
+    <a href="${gmapLink}" target="_blank">Buka</a>
+  </td>
+`;
 
       tr.onclick = ()=>{
         resetHighlight();

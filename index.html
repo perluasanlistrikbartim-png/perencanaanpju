@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Web GIS Jaringan Listrik Bartim</title>
+<title>Web GIS Master Plan PJU Kabupaten Barito Timur</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
@@ -16,7 +16,7 @@
 body{
   margin:0;
   font-family:Segoe UI, Arial, sans-serif;
-  background:#020617;            /* gelap elegan */
+  background:#020617;
   color:#e5e7eb;
 }
 
@@ -43,7 +43,7 @@ header{
   top:0;left:0;right:0;
   background:#0b3a66;
   z-index:1000;
-  border-bottom:3px solid #f59e0b;   /* ORANGE PLN */
+  border-bottom:3px solid #f59e0b;
 }
 
 .header-top{
@@ -158,7 +158,7 @@ header{
   box-shadow:
     0 0 0 2px rgba(245,158,11,.15),
     0 18px 40px rgba(0,0,0,.6);
-  overflow:hidden;
+  overflow-x:auto;     /* SCROLL AKTIF */
 }
 
 /* =====================================================
@@ -184,6 +184,7 @@ header{
   border-bottom:2px solid #f59e0b;
 }
 
+/* === EFEK KILAT HEADER === */
 #tabelJaringan thead th::after{
   content:"";
   position:absolute;
@@ -233,9 +234,35 @@ header{
 }
 
 /* =====================================================
-   RESPONSIVE HP
+   PATCH — BATAS ANTAR KOLOM TABEL (GLOBAL)
+===================================================== */
+#tabelJaringan thead th,
+#tabelJaringan tbody td{
+  border-right:1px solid rgba(245,158,11,.35);
+}
+
+#tabelJaringan thead th:last-child,
+#tabelJaringan tbody td:last-child{
+  border-right:none;
+}
+
+#tabelJaringan tbody tr{
+  border-bottom:1px solid rgba(245,158,11,.25);
+}
+
+#tabelJaringan tbody tr:hover td{
+  background:linear-gradient(
+    90deg,
+    rgba(245,158,11,.08),
+    rgba(2,6,23,0)
+  );
+}
+
+/* =====================================================
+   RESPONSIVE HP (SATU BLOK, AMAN)
 ===================================================== */
 @media(max-width:768px){
+
   #map{height:50vh}
 
   #tabelJaringan thead{display:none}
@@ -258,8 +285,28 @@ header{
     color:#f59e0b;
     font-weight:600;
   }
+
+  .table-wrapper::after{
+    content:"← geser →";
+    display:block;
+    text-align:center;
+    font-size:11px;
+    color:#f59e0b;
+    padding:6px 0;
+    opacity:.8;
+  }
+
+  .footer-inner{
+    padding:14px 12px;
+  }
+
+  .footer-desc,
+  .footer-present{
+    font-size:12px;
+  }
 }
-   /* =====================================================
+
+/* =====================================================
    FOOTER — DARK PUPR + ORANGE BOUNDARY
 ===================================================== */
 .app-footer{
@@ -306,52 +353,8 @@ header{
   font-size:12px;
   opacity:.7;
 }
-
-/* ===== RESPONSIVE ===== */
-@media(max-width:768px){
-  .footer-inner{
-    padding:14px 12px;
-  }
-/* =====================================================
-   PATCH — BATAS ANTAR KOLOM TABEL (EYECATCHING)
-===================================================== */
-
-/* === GARIS VERTIKAL ANTAR KOLOM === */
-#tabelJaringan thead th,
-#tabelJaringan tbody td{
-  border-right:1px solid rgba(245,158,11,.35); /* orange PLN halus */
-}
-
-/* kolom terakhir jangan ada garis kanan */
-#tabelJaringan thead th:last-child,
-#tabelJaringan tbody td:last-child{
-  border-right:none;
-}
-
-/* === GARIS HORIZONTAL DIPERTEGAS === */
-#tabelJaringan tbody tr{
-  border-bottom:1px solid rgba(245,158,11,.25);
-}
-
-/* === AKSEN SAAT HOVER (GRID TERASA HIDUP) === */
-#tabelJaringan tbody tr:hover td{
-  background:linear-gradient(
-    90deg,
-    rgba(245,158,11,.08),
-    rgba(2,6,23,.0)
-  );
-}
-
-  .footer-desc{
-    font-size:12px;
-  }
-
-  .footer-present{
-    font-size:12px;
-  }
-}
-
 </style>
+
 
 
 
@@ -368,7 +371,7 @@ header{
 
     <div class="header-title">
       <div class="title-main">
-        Sistem Informasi Perencanaan PJU pada Tiang Listrik PLN yang Belum Terpasang PJU
+        Sistem Informasi Master PJU pada Tiang Listrik PLN yang Belum Terpasang PJU
       </div>
       <div class="title-sub">
         Dinas Pekerjaan Umum, Penataan Ruang, Perumahan dan Kawasan Permukiman<br>
@@ -719,14 +722,19 @@ function closePopup(){ popup.style.display='none'; }
 map.whenReady(()=>{
   loadAllData();
 });
-document.getElementById('tahunFooter').innerText = new Date().getFullYear();
+document.addEventListener('DOMContentLoaded', function () {
+    const el = document.getElementById('tahunFooter');
+    if (el) {
+      el.textContent = new Date().getFullYear();
+    }
+  });
 </script>
 
 <footer class="app-footer">
   <div class="footer-inner">
 
     <div class="footer-title">
-      MASTER PLAN PJU SWAKELOLA
+      MASTER PLAN PJU (SWAKELOLA 2025)
     </div>
 
     <div class="footer-desc">
@@ -739,7 +747,7 @@ document.getElementById('tahunFooter').innerText = new Date().getFullYear();
       Presented in Web GIS by <b>Septeriady Ngubel</b>
     </div>
 
-    <div class="footer-meta">
+    <div class="tahunFooter">
       Tahun  <span id="tahunFooter"></span> • Kabupaten Barito Timur
     </div>
 

@@ -469,6 +469,127 @@ header{
     border-radius:18px;
   }
 }
+/* =====================================================
+   FIX TOTAL — MOBILE TABLE JADI CARD (BERSIH & JELAS)
+===================================================== */
+@media(max-width:768px){
+
+  /* wrapper jangan scroll horizontal */
+  .table-wrapper{
+    overflow-x:hidden;
+    margin:12px;
+    padding:0;
+    border-radius:16px;
+  }
+
+  /* tabel jadi container list */
+  #tabelJaringan{
+    display:block;
+  }
+
+  #tabelJaringan thead{
+    display:none;
+  }
+
+  #tabelJaringan tbody{
+    display:block;
+  }
+
+  /* === SATU BARIS = SATU CARD === */
+  #tabelJaringan tbody tr{
+    display:block;
+    margin:14px 10px;
+    padding:14px;
+
+    background:linear-gradient(
+      180deg,
+      #020617,
+      #020617
+    );
+
+    border:2px solid #f59e0b;
+    border-radius:18px;
+
+    box-shadow:
+      0 0 0 2px rgba(245,158,11,.15),
+      0 14px 28px rgba(0,0,0,.6);
+  }
+
+  /* === SETIAP KOLOM JADI BARIS INFO === */
+  #tabelJaringan tbody td{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+
+    padding:6px 0;
+    border:none;
+
+    font-size:13px;
+  }
+
+  /* label kiri */
+  #tabelJaringan tbody td::before{
+    content:attr(data-label);
+    font-weight:600;
+    color:#f59e0b;
+    min-width:45%;
+    padding-right:8px;
+  }
+
+  /* nilai kanan */
+  #tabelJaringan tbody td{
+    color:#e5e7eb;
+  }
+
+  /* === NOMOR JADI BADGE === */
+  #tabelJaringan tbody td:first-child{
+    justify-content:flex-end;
+    font-size:12px;
+    font-weight:700;
+    color:#020617;
+
+    background:#f59e0b;
+    border-radius:999px;
+    padding:4px 10px;
+    width:max-content;
+    margin-left:auto;
+    margin-bottom:8px;
+  }
+
+  /* === CTA TRACK === */
+  #tabelJaringan tbody td:last-child{
+    justify-content:center;
+    margin-top:10px;
+  }
+
+  #tabelJaringan tbody td a{
+    display:block;
+    width:100%;
+    text-align:center;
+
+    padding:10px;
+    border-radius:12px;
+
+    background:linear-gradient(
+      180deg,
+      #f59e0b,
+      #fbbf24
+    );
+
+    color:#020617;
+    font-weight:800;
+    letter-spacing:.05em;
+  }
+
+  #tabelJaringan tbody td a:hover{
+    background:#fde68a;
+  }
+
+  /* hapus teks geser */
+  .table-wrapper::after{
+    display:none;
+  }
+}
 
 </style>
 

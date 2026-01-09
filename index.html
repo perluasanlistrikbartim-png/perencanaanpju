@@ -453,14 +453,20 @@ function loadPolyline(){
     .then(j=>{
       layer.clearLayers();
       j.data.forEach(d=>{
-        L.polyline(JSON.parse(d.polyline_json),{
+        const coords = JSON.parse(d.polyline_json);
+
+        L.polyline(coords,{
           color:'#facc15',
           weight:4
         }).addTo(layer);
       });
     });
 }
-loadPolyline();
+
+map.whenReady(() => {
+  loadPolyline();
+});
+
 
 /* ================= POPUP ================= */
 function openPopup(){ popup.style.display='block'; }

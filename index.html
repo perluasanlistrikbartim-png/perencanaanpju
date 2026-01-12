@@ -2,48 +2,60 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Web GIS Master Plan PJU Kabupaten Barito Timur</title>
+<title>Web GIS Jaringan Listrik Bartim</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-/* =====================================================
-   GLOBAL — DARK PUPR THEME
-===================================================== */
+/* ===============================
+   GLOBAL
+================================ */
 *{box-sizing:border-box}
 
 body{
   margin:0;
   font-family:Segoe UI, Arial, sans-serif;
-  background:#020617;
-  color:#e5e7eb;
+  background:#f4f6f8;
+  color:#1f2937;
 }
 
-/* =====================================================
-   ANIMASI HALUS
-===================================================== */
+/* ===============================
+   ANIMASI HALUS (DENYUT RINGAN)
+================================ */
 @keyframes softPulse{
-  0%{box-shadow:0 0 0 rgba(244,196,48,0)}
-  50%{box-shadow:0 0 10px rgba(244,196,48,.25)}
-  100%{box-shadow:0 0 0 rgba(244,196,48,0)}
+  0%{
+    box-shadow:0 0 0 rgba(244,196,48,0.0);
+  }
+  50%{
+    box-shadow:0 0 12px rgba(244,196,48,0.35);
+  }
+  100%{
+    box-shadow:0 0 0 rgba(244,196,48,0.0);
+  }
 }
 
-@keyframes kilat{
-  0%{left:-120%}
-  40%{left:120%}
-  100%{left:120%}
+@keyframes fadeSlide{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
 }
 
-/* =====================================================
-   HEADER — PUPR
-===================================================== */
+/* ===============================
+   HEADER KOP SURAT (PUPR + PLN)
+================================ */
 header{
   position:fixed;
-  top:0;left:0;right:0;
-  background:#0b3a66;
+  top:0; left:0; right:0;
+  background:#0f4c81; /* Biru PUPR */
   z-index:1000;
-  border-bottom:3px solid #f59e0b;
+  border-bottom:4px solid #f4c430; /* Kuning PLN */
+  animation:softPulse 6s ease-in-out infinite;
 }
 
 .header-top{
@@ -52,12 +64,22 @@ header{
   padding:10px 16px;
 }
 
-.header-logo img{height:56px}
+.header-logo{
+  width:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.header-logo img{
+  height:58px;
+}
 
 .header-title{
   flex:1;
   text-align:center;
-  color:#e5e7eb;
+  line-height:1.4;
+  color:#ffffff;
 }
 
 .header-title .title-main{
@@ -68,594 +90,192 @@ header{
 
 .header-title .title-sub{
   font-size:13px;
-  opacity:.9;
+  font-weight:500;
+  opacity:.95;
 }
 
-/* =====================================================
+/* ===============================
    BAR KONTROL
-===================================================== */
+================================ */
 .header-controls{
   display:flex;
   gap:10px;
   padding:8px 16px;
-  background:#0f172a;
-  border-top:1px solid #1e293b;
+  background:#e9f1f8;
+  border-top:1px solid rgba(255,255,255,0.3);
 }
 
 .header-controls select{
-  background:#020617;
-  color:#e5e7eb;
-  border:1px solid #334155;
   padding:6px 10px;
   border-radius:6px;
+  border:1px solid #cbd5e1;
+  background:#ffffff;
+  font-size:14px;
 }
 
 .header-controls button{
-  background:#f59e0b;
-  color:#020617;
-  border:none;
   padding:6px 14px;
   border-radius:6px;
+  border:none;
+  background:#f4c430;
+  color:#1f2937;
   font-weight:600;
   cursor:pointer;
-  animation:softPulse 6s ease-in-out infinite;
+  transition:all .2s ease;
+  animation:softPulse 5s ease-in-out infinite;
 }
 
-/* =====================================================
-   MAP CONTAINER
-===================================================== */
+.header-controls button:hover{
+  background:#e6b800;
+  transform:translateY(-1px);
+}
+
+/* ===============================
+   MAP
+================================ */
 #map{
   margin-top:150px;
+  width:100%;
   height:60vh;
-  width:100%;
-  border-top:3px solid #f59e0b;
-  border-bottom:3px solid #f59e0b;
+  z-index:1;
 }
 
-/* =====================================================
-   POPUP LEAFLET
-===================================================== */
-.leaflet-popup-content-wrapper{
-  padding:0;
-  border-radius:10px;
-  background:#020617;
-  border:2px solid #f59e0b;
-}
-
-.popup-kecamatan-header{
-  padding:8px 12px;
-  color:#020617;
-  font-weight:700;
-}
-
-.popup-kecamatan-body{
-  padding:10px 12px;
-  font-size:13px;
-  color:#e5e7eb;
-}
-
-.popup-kecamatan-body b{
-  color:#f59e0b;
-}
-
-/* =====================================================
-   ICON PLN 3D
-===================================================== */
-.icon-pln-3d{
-  filter:
-    drop-shadow(0 2px 2px rgba(0,0,0,.6))
-    drop-shadow(0 6px 10px rgba(0,0,0,.8));
-}
-
-/* =====================================================
-   TABLE WRAPPER — BOUNDARY ORANGE
-===================================================== */
-.table-wrapper{
-  margin:14px;
-  background:#020617;
-  border:2px solid #f59e0b;
-  border-radius:14px;
-  box-shadow:
-    0 0 0 2px rgba(245,158,11,.15),
-    0 18px 40px rgba(0,0,0,.6);
-  overflow-x:auto;     /* SCROLL AKTIF */
-}
-
-/* =====================================================
+/* ===============================
    TABLE
-===================================================== */
-#tabelJaringan{
+================================ */
+.table-wrapper{
+  background:#ffffff;
+  padding:12px;
+  border-top:3px solid #0f4c81;
+}
+
+table{
   width:100%;
-  border-collapse:separate;
-  border-spacing:0;
-  background:#020617;
-  color:#e5e7eb;
+  border-collapse:collapse;
   font-size:13px;
 }
 
-/* ===== HEADER ===== */
-#tabelJaringan thead th{
-  position:relative;
-  background:#0b3a66;
-  color:#e5e7eb;
-  padding:10px 8px;
-  font-size:12px;
-  text-transform:uppercase;
-  border-bottom:2px solid #f59e0b;
+th, td{
+  border:1px solid #e5e7eb;
+  padding:6px 8px;
 }
 
-/* === EFEK KILAT HEADER === */
-#tabelJaringan thead th::after{
-  content:"";
-  position:absolute;
-  top:0;
-  left:-120%;
-  width:120%;
-  height:100%;
-  background:linear-gradient(
-    120deg,
-    transparent,
-    rgba(245,158,11,.35),
-    transparent
-  );
-  animation:kilat 8s linear infinite;
-}
-
-/* ===== BODY ===== */
-#tabelJaringan tbody td{
-  padding:9px 10px;
-  border-bottom:1px solid #1e293b;
-}
-
-/* ===== HOVER ===== */
-#tabelJaringan tbody tr:hover{
-  background:#020617;
-  box-shadow:inset 4px 0 0 #f59e0b;
-}
-
-/* ===== ACTIVE ===== */
-#tabelJaringan tbody tr.active{
-  background:#020617;
-  box-shadow:
-    inset 6px 0 0 #f59e0b,
-    0 0 16px rgba(245,158,11,.35);
+th{
+  background:#f1f5f9;
+  color:#0f4c81;
   font-weight:600;
 }
 
-/* ===== LINK TRACK ===== */
-#tabelJaringan a{
-  color:#f59e0b;
-  font-weight:600;
-  text-decoration:none;
-}
-
-#tabelJaringan a:hover{
-  text-decoration:underline;
-}
-
-/* =====================================================
-   PATCH — BATAS ANTAR KOLOM TABEL (GLOBAL)
-===================================================== */
-#tabelJaringan thead th,
-#tabelJaringan tbody td{
-  border-right:1px solid rgba(245,158,11,.35);
-}
-
-#tabelJaringan thead th:last-child,
-#tabelJaringan tbody td:last-child{
-  border-right:none;
-}
-
-#tabelJaringan tbody tr{
-  border-bottom:1px solid rgba(245,158,11,.25);
-}
-
-#tabelJaringan tbody tr:hover td{
-  background:linear-gradient(
-    90deg,
-    rgba(245,158,11,.08),
-    rgba(2,6,23,0)
-  );
-}
-
-/* =====================================================
-   RESPONSIVE HP (SATU BLOK, AMAN)
-===================================================== */
-@media(max-width:768px){
-
-  #map{height:50vh}
-
-  #tabelJaringan thead{display:none}
-
-  #tabelJaringan tbody tr{
-    display:block;
-    margin:10px;
-    border:1px solid #f59e0b;
-    border-radius:12px;
-  }
-
-  #tabelJaringan tbody td{
-    display:flex;
-    justify-content:space-between;
-    border-bottom:1px solid #1e293b;
-  }
-
-  #tabelJaringan tbody td::before{
-    content:attr(data-label);
-    color:#f59e0b;
-    font-weight:600;
-  }
-
-  .table-wrapper::after{
-    content:"← geser →";
-    display:block;
-    text-align:center;
-    font-size:11px;
-    color:#f59e0b;
-    padding:6px 0;
-    opacity:.8;
-  }
-
-  .footer-inner{
-    padding:14px 12px;
-  }
-
-  .footer-desc,
-  .footer-present{
-    font-size:12px;
-  }
-}
-
-/* =====================================================
-   FOOTER — DARK PUPR + ORANGE BOUNDARY
-===================================================== */
-.app-footer{
-  margin-top:20px;
-  background:#020617;
-  border-top:2px solid #f59e0b;
-  box-shadow:0 -8px 30px rgba(0,0,0,.6);
-}
-
-.footer-inner{
-  max-width:1200px;
-  margin:auto;
-  padding:18px 16px;
-  text-align:center;
-  color:#e5e7eb;
-}
-
-.footer-title{
-  font-size:14px;
-  font-weight:700;
-  letter-spacing:.08em;
-  color:#f59e0b;
-  margin-bottom:6px;
-}
-
-.footer-desc{
-  font-size:13px;
-  line-height:1.5;
-  opacity:.9;
-}
-
-.footer-present{
-  margin-top:8px;
-  font-size:13px;
-  color:#cbd5f5;
-}
-
-.footer-present b{
-  color:#f59e0b;
-}
-
-.footer-meta{
-  margin-top:10px;
-  font-size:12px;
-  opacity:.7;
-}
-   /* =====================================================
-   PANEL INPUT DATA — FINAL (DESKTOP & MOBILE)
-===================================================== */
-
+/* ===============================
+   POPUP OVERLAY
+================================ */
 #popup{
   position:fixed;
-  top:180px;                 /* di bawah header */
+  top:160px;
   right:20px;
-  width:380px;
-  max-height:calc(100vh - 220px);
-  overflow-y:auto;
-
-  background:#020617;
-  border:2px solid #f59e0b;
-  border-radius:16px;
-  box-shadow:0 25px 50px rgba(0,0,0,.75);
-  z-index:6000;
-
-  display:none;              /* default tertutup */
+  width:340px;
+  background:#ffffff;
+  border-radius:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  display:none;
+  z-index:2000;
+  animation:fadeSlide .25s ease-out;
 }
 
-/* ===== HEADER ===== */
-#popup .popup-head{
-  background:#0b3a66;
-  padding:10px 14px;
-  color:#f59e0b;
-  font-weight:700;
-  font-size:14px;
-
+.popup-head{
+  background:#0f4c81;
+  color:#ffffff;
+  padding:10px;
   display:flex;
   justify-content:space-between;
   align-items:center;
-
-  border-bottom:2px solid #f59e0b;
-  border-radius:14px 14px 0 0;
+  border-radius:10px 10px 0 0;
 }
 
-/* ===== BODY ===== */
-#popup .popup-body{
-  padding:14px;
+.popup-body{
+  padding:12px;
+  font-size:14px;
 }
 
-/* ===== LABEL ===== */
-#popup .popup-body label{
+.popup-body label{
   display:block;
-  margin-top:10px;
-  margin-bottom:4px;
-  font-size:12px;
-  color:#94a3b8;
+  margin-top:8px;
 }
 
-/* ===== INPUT & SELECT ===== */
-#popup .popup-body input,
-#popup .popup-body select{
+.popup-body input,
+.popup-body select{
   width:100%;
-  padding:7px 9px;
-
-  background:#020617;
-  color:#e5e7eb;
-
-  border:1px solid #334155;
+  padding:6px;
+  margin-top:4px;
+  border:1px solid #d1d5db;
   border-radius:6px;
-  font-size:13px;
 }
 
-/* readonly field (panjang jaringan) */
-#popup .popup-body input[readonly]{
-  background:#020617;
-  border:1px dashed #475569;
-  color:#cbd5e1;
-}
-
-/* ===== FILE INPUT ===== */
-#popup .popup-body input[type="file"]{
-  padding:4px;
-  font-size:12px;
-  color:#cbd5e1;
-}
-
-/* ===== BUTTON ===== */
-#popup .popup-body button{
-  width:100%;
-  margin-top:14px;
-  padding:9px;
-
-  background:#f59e0b;
-  color:#020617;
-
-  border:none;
-  border-radius:8px;
-  font-weight:700;
-  cursor:pointer;
-
-  transition:all .2s ease;
-}
-
-#popup .popup-body button:hover{
-  background:#fbbf24;
-}
-
-/* =====================================================
-   MOBILE MODE — BOTTOM SHEET
-===================================================== */
+/* ===============================
+   RESPONSIVE
+================================ */
 @media(max-width:768px){
+  .header-top{
+    flex-direction:column;
+    gap:6px;
+  }
+
+  .header-logo img{
+    height:48px;
+  }
+
+  #map{
+    height:50vh;
+  }
 
   #popup{
     left:10px;
     right:10px;
-    bottom:10px;
-    top:auto;
-
     width:auto;
-    max-height:80vh;
-    border-radius:18px;
   }
 }
 /* =====================================================
-   FIX TOTAL — MOBILE TABLE JADI CARD (BERSIH & JELAS)
+   PATCH TABEL MOBILE & DESKTOP (AMAN, TIDAK EKSTRIM)
+   MENIRU POLA SISTEM JEMBATAN
 ===================================================== */
-@media(max-width:768px){
 
-  /* wrapper jangan scroll horizontal */
-  .table-wrapper{
-    overflow-x:hidden;
-    margin:12px;
-    padding:0;
-    border-radius:16px;
-  }
+/* WRAPPER TABEL BISA SCROLL */
+.table-wrapper{
+  overflow-x:auto;     /* SCROLL KIRI-KANAN */
+  overflow-y:auto;
+}
 
-  /* tabel jadi container list */
-  #tabelJaringan{
-    display:block;
-  }
+/* PAKSA TABEL LEBIH LEBAR DARI LAYAR */
+.table-wrapper table{
+  width:max-content;   /* ⬅️ KUNCI UTAMA */
+  min-width:1200px;    /* sesuaikan jumlah kolom PJU */
+}
 
-  #tabelJaringan thead{
-    display:none;
-  }
+/* JANGAN BIARKAN TEKS PECAH */
+.table-wrapper th,
+.table-wrapper td{
+  white-space:nowrap;
+}
 
-  #tabelJaringan tbody{
-    display:block;
-  }
-
-  /* === SATU BARIS = SATU CARD === */
-  #tabelJaringan tbody tr{
-    display:block;
-    margin:14px 10px;
-    padding:14px;
-
-    background:linear-gradient(
-      180deg,
-      #020617,
-      #020617
-    );
-
-    border:2px solid #f59e0b;
-    border-radius:18px;
-
-    box-shadow:
-      0 0 0 2px rgba(245,158,11,.15),
-      0 14px 28px rgba(0,0,0,.6);
-  }
-
-  /* === SETIAP KOLOM JADI BARIS INFO === */
-  #tabelJaringan tbody td{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-
-    padding:6px 0;
-    border:none;
-
-    font-size:13px;
-  }
-
-  /* label kiri */
-  #tabelJaringan tbody td::before{
-    content:attr(data-label);
-    font-weight:600;
-    color:#f59e0b;
-    min-width:45%;
-    padding-right:8px;
-  }
-
-  /* nilai kanan */
-  #tabelJaringan tbody td{
-    color:#e5e7eb;
-  }
-
-  /* === NOMOR JADI BADGE === */
-  #tabelJaringan tbody td:first-child{
-    justify-content:flex-end;
-    font-size:12px;
-    font-weight:700;
-    color:#020617;
-
-    background:#f59e0b;
-    border-radius:999px;
-    padding:4px 10px;
-    width:max-content;
-    margin-left:auto;
-    margin-bottom:8px;
-  }
-
-  /* === CTA TRACK === */
-  #tabelJaringan tbody td:last-child{
-    justify-content:center;
-    margin-top:10px;
-  }
-
-  #tabelJaringan tbody td a{
-    display:block;
-    width:100%;
-    text-align:center;
-
-    padding:10px;
-    border-radius:12px;
-
-    background:linear-gradient(
-      180deg,
-      #f59e0b,
-      #fbbf24
-    );
-
-    color:#020617;
-    font-weight:800;
-    letter-spacing:.05em;
-  }
-
-  #tabelJaringan tbody td a:hover{
-    background:#fde68a;
-  }
-
-  /* hapus teks geser */
-  .table-wrapper::after{
-    display:none;
-  }
+/* HEADER TETAP TERLIHAT SAAT SCROLL */
+.table-wrapper th{
+  position:sticky;
+  top:0;
+  z-index:2;
 }
 /* =====================================================
-   LOCK MOBILE MODE — CARD ONLY
+   PATCH INTERAKSI TABEL ↔ MAP
 ===================================================== */
-@media(max-width:768px){
-
-  #tabelJaringan{
-    display:block !important;
-  }
-
-  #tabelJaringan thead{
-    display:none !important;
-  }
-
-  #tabelJaringan tbody,
-  #tabelJaringan tbody tr,
-  #tabelJaringan tbody td{
-    display:block !important;
-    width:100% !important;
-  }
+tr.active{
+  background:#fde68a !important;
 }
-/* =====================================================
-   MOBILE — TABEL SCROLL HORIZONTAL (STABIL)
-===================================================== */
-@media(max-width:768px){
 
-  /* wrapper jadi scroll */
-  .table-wrapper{
-    overflow-x:auto;
-    -webkit-overflow-scrolling:touch;
-    margin:12px;
-    padding:8px;
-    border-radius:14px;
-  }
-
-  /* tabel jangan dipecah */
-  #tabelJaringan{
-    display:table;
-    min-width:760px;   /* PENTING: paksa lebar */
-    font-size:12px;
-  }
-
-  #tabelJaringan thead th,
-  #tabelJaringan tbody td{
-    white-space:nowrap;
-  }
-
-  /* header tetap kelihatan */
-  #tabelJaringan thead{
-    display:table-header-group;
-  }
-
-  /* baris tetap table-row */
-  #tabelJaringan tbody tr{
-    display:table-row;
-  }
-
-  /* HILANGKAN SEMUA STYLE CARD */
-  #tabelJaringan tbody td::before{
-    content:none !important;
-  }
+tr:hover{
+  cursor:pointer;
+  background:#fff7cc;
 }
 
 </style>
-
-
-
 
 </head>
 
@@ -670,7 +290,7 @@ header{
 
     <div class="header-title">
       <div class="title-main">
-        Sistem Informasi Master PJU pada Tiang Listrik PLN yang Belum Terpasang PJU
+        Sistem Informasi Perencanaan PJU pada Tiang Listrik PLN yang Belum Terpasang PJU
       </div>
       <div class="title-sub">
         Dinas Pekerjaan Umum, Penataan Ruang, Perumahan dan Kawasan Permukiman<br>
@@ -688,22 +308,6 @@ header{
 </header>
 
 <div id="map"></div>
-<div class="table-wrapper">
-  <table id="tabelJaringan">
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Kecamatan</th>
-        <th>Desa / Kelurahan</th>
-        <th>Ruas Jalan</th>
-        <th>Jumlah Tiang</th>
-        <th>Panjang (km)</th>
-        <th>Track</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
 
 <!-- POPUP -->
 <div id="popup">
@@ -715,14 +319,9 @@ header{
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
+<script>
 /* ================= CONFIG ================= */
 const API = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0szhorV9VX5xk5tW4PyZH1VF2x0EGVoaAhPGoPs2k/exec";
-
-/* ================= GLOBAL CACHE ================= */
-let dataJaringan = [];
-let polylineCache = [];
-let masterWilayah = [];
 
 /* ================= MAP ================= */
 const map = L.map('map',{minZoom:9,maxZoom:19})
@@ -734,326 +333,195 @@ const layer = L.layerGroup().addTo(map);
 
 /* ================= ICON PLN ================= */
 const plnIcon = L.icon({
-  iconUrl:'pln.png',
+  iconUrl:'assets/img/pln.png',
   iconSize:[36,36],
-  iconAnchor:[18,18],
-  popupAnchor:[0,-16],
-  className:'icon-pln-3d'
+  iconAnchor:[18,18]
 });
 
+/* ================= GLOBAL STATE ================= */
+let masterWilayah = [];
+let markerMap = {};     // id_jaringan → marker
+let polylineMap = {};   // id_jaringan → polyline
+let tableMap = {};      // id_jaringan → <tr>
 
-/* ================= WARNA PER KECAMATAN (MUTED / DINAS) ================= */
-const WARNA_KECAMATAN = {
-  "Dusun Timur":        { main:"#6b7280", shadow:"#374151" },
-  "Dusun Tengah":       { main:"#6b4f3f", shadow:"#3f2d20" },
-  "Pematang Karau":     { main:"#556b2f", shadow:"#2f3b18" },
-  "Raren Batuah":       { main:"#4b5563", shadow:"#1f2937" },
-  "Paku":               { main:"#5f7161", shadow:"#37423d" },
-  "Karusen Janang":     { main:"#7c6f64", shadow:"#3e342e" },
-  "Awang":              { main:"#5b6770", shadow:"#2e3440" },
-  "Paju Epat":          { main:"#6d5c45", shadow:"#3a2f21" },
-  "Benua Lima":         { main:"#5a5f4b", shadow:"#2f3324" },
-  "Patangkep Tutui":    { main:"#4a5d73", shadow:"#1f2937" }
-};
-const WARNA_DEFAULT = { main:"#6b7280", shadow:"#374151" };
-
-/* ================= LOAD MASTER WILAYAH ================= */
+/* ================= LOAD MASTER ================= */
 fetch(API+'?action=master')
 .then(r=>r.json())
 .then(j=>{
-  masterWilayah = j.data || [];
-  const kec = [...new Set(masterWilayah.map(d=>d.kecamatan))];
+  masterWilayah = j.data;
+  const kec = [...new Set(j.data.map(d=>d.kecamatan))];
   const sel = document.getElementById('kecamatanFilter');
   kec.forEach(k=>{
     sel.innerHTML += `<option value="${k}">${k}</option>`;
   });
 });
 
-/* ================= LOAD DATA JARINGAN + POLYLINE ================= */
-function loadAllData(){
-  Promise.all([
-    fetch(API+'?action=data').then(r=>r.json()),
-    fetch(API+'?action=polyline').then(r=>r.json())
-  ]).then(([d,p])=>{
-    dataJaringan  = d.data || [];
-    polylineCache = p.data || [];
+/* ================= FILTER KECAMATAN ================= */
+document.getElementById('kecamatanFilter').onchange = ()=>{
+  const kec = kecamatanFilter.value;
+  layer.clearLayers();
+  clearTable();
+  closePopup();
+  if(kec) loadDataByKecamatan(kec);
+};
 
-    console.log('DATA JARINGAN:', dataJaringan);
-    console.log('POLYLINE CACHE:', polylineCache);
+/* ================= LOAD DATA + RENDER ================= */
+function loadDataByKecamatan(kecamatan){
+  fetch(API+'?action=data&kecamatan='+encodeURIComponent(kecamatan))
+  .then(r=>r.json())
+  .then(j=>{
+    renderTable(j.data);
+    renderMap(j.data);
   });
 }
 
-/* ================= FILTER KECAMATAN ================= */
-document.getElementById('kecamatanFilter').onchange = e=>{
-  closePopup();
-  renderPolylineByKecamatan(e.target.value);
-};
-let mapObjects = {}; 
-// { id_jaringan : { line, marker, rowEl } }
-
-/* ================= RENDER POLYLINE (FINAL FIX) ================= */
-function renderPolylineByKecamatan(kecamatan){
-  layer.clearLayers();
-  mapObjects = {};
-
+/* ================= TABLE ================= */
+function clearTable(){
   const tbody = document.querySelector('#tabelJaringan tbody');
-  if(tbody) tbody.innerHTML = '';
+  tbody.innerHTML = '';
+  tableMap = {};
+}
 
-  let nomor = 1;
+function renderTable(data){
+  const tbody = document.querySelector('#tabelJaringan tbody');
+  tbody.innerHTML = '';
+  tableMap = {};
 
-  polylineCache.forEach(pl=>{
-    const row = dataJaringan.find(d=>d.id_jaringan===pl.id_jaringan);
-    if(!row) return;
+  data.forEach((d,i)=>{
+    const tr = document.createElement('tr');
 
-    // filter kecamatan (kalau kosong = semua)
-    if(kecamatan && row.kecamatan !== kecamatan) return;
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${d.kecamatan}</td>
+      <td>${d.desa_kelurahan}</td>
+      <td>${d.ruas_jalan}</td>
+      <td>${d.jumlah_tiang}</td>
+      <td>${d.panjang_jaringan || '-'}</td>
+      <td>
+        ${d.polyline_link ? `<a href="${d.polyline_link}" target="_blank">Track</a>` : '-'}
+      </td>
+    `;
 
-    const coords = JSON.parse(pl.polyline_json);
-    if(!coords || coords.length < 2) return;
+    tr.onclick = ()=>{
+      highlightRow(d.id_jaringan);
+      zoomToPolyline(d.id_jaringan);
+      openView(d);
+    };
 
-    const warna = WARNA_KECAMATAN[row.kecamatan] || WARNA_DEFAULT;
+    tbody.appendChild(tr);
+    tableMap[d.id_jaringan] = tr;
+  });
+}
 
-    /* ===== SHADOW (EFEK 3D) ===== */
-    L.polyline(coords,{
-      color: warna.shadow,
-      weight:10,
-      opacity:0.85,
-      lineCap:'round',
-      lineJoin:'round'
-    }).addTo(layer);
+/* ================= MAP ================= */
+function renderMap(data){
+  markerMap = {};
+  polylineMap = {};
 
-    /* ===== GARIS UTAMA ===== */
-    const line = L.polyline(coords,{
-      color: warna.main,
-      weight:6,
-      opacity:1,
-      lineCap:'round',
-      lineJoin:'round'
-    }).addTo(layer);
+  data.forEach(d=>{
+    if(d.lat && d.lng){
+      const m = L.marker([d.lat,d.lng],{icon:plnIcon}).addTo(layer);
+      markerMap[d.id_jaringan] = m;
 
-    /* ===== MARKER PLN ===== */
-    const midPoint = coords[Math.floor(coords.length/2)];
-    const marker = L.marker(midPoint,{
-      icon:plnIcon,
-      zIndexOffset:1000
-    })
-    .bindPopup(`
-      <div class="popup-kecamatan-header"
-           style="background:${warna.main};border-bottom:3px solid ${warna.shadow}">
-        ${row.kecamatan}
-      </div>
-
-      <div class="popup-kecamatan-body">
-        <b>Ruas Jalan</b><br>${row.ruas_jalan}<br><br>
-        <b>Desa</b><br>${row.desa_kelurahan}<br><br>
-        <b>Jumlah Tiang</b><br>${row.jumlah_tiang || '-'}<br><br>
-        <b>Panjang</b><br>${row.panjang_jaringan || '-'} km
-      </div>
-    `)
-    .addTo(layer);
-
-    /* ===== SIMPAN RELASI MAP ↔ TABEL ===== */
-    mapObjects[row.id_jaringan] = { line, marker };
-
-    /* ===== ISI TABEL ===== */
-    if(tbody){
-      const gmapLink =
-        'https://www.google.com/maps/dir/' +
-        coords.map(c=>`${c[0]},${c[1]}`).join('/');
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-  <td data-label="No">${nomor++}</td>
-  <td data-label="Kecamatan">${row.kecamatan}</td>
-  <td data-label="Desa / Kelurahan">${row.desa_kelurahan}</td>
-  <td data-label="Ruas Jalan">${row.ruas_jalan}</td>
-  <td data-label="Jumlah Tiang">${row.jumlah_tiang}</td>
-  <td data-label="Panjang (km)">${row.panjang_jaringan}</td>
-  <td data-label="Track">
-    <a href="${gmapLink}" target="_blank">Buka</a>
-  </td>
-`;
-
-      tr.onclick = ()=>{
-        resetHighlight();
-        tr.classList.add('active');
-        line.setStyle({ color:'#dc2626', weight:8 });
-        marker.openPopup();
-        map.panTo(marker.getLatLng());
-      };
-
-      marker.on('click',()=>{
-        resetHighlight();
-        tr.classList.add('active');
-        line.setStyle({ color:'#dc2626', weight:8 });
-        tr.scrollIntoView({behavior:'smooth', block:'center'});
+      m.on('click',()=>{
+        highlightRow(d.id_jaringan);
+        openView(d);
       });
+    }
 
-      tbody.appendChild(tr);
+    if(d.polyline_json){
+      const pl = L.polyline(JSON.parse(d.polyline_json),{
+        color:'#facc15',
+        weight:4
+      }).addTo(layer);
+
+      polylineMap[d.id_jaringan] = pl;
     }
   });
+}
 
-  if(Object.keys(mapObjects).length){
-    const bounds = L.featureGroup(
-      Object.values(mapObjects).map(o=>o.line)
-    ).getBounds();
-    map.fitBounds(bounds,{padding:[40,40]});
+/* ================= INTERAKSI ================= */
+function highlightRow(id){
+  Object.values(tableMap).forEach(tr=>tr.classList.remove('active'));
+  if(tableMap[id]){
+    tableMap[id].classList.add('active');
+    tableMap[id].scrollIntoView({behavior:'smooth',block:'center'});
   }
 }
-/* ================= RESET SOROT (WAJIB DI LUAR) ================= */
-function resetHighlight(){
-  Object.values(mapObjects).forEach(o=>{
-    const kec = o.rowEl
-      ? o.rowEl.children[1].innerText
-      : null;
 
-    const warna = WARNA_KECAMATAN[kec] || WARNA_DEFAULT;
-
-    o.line.setStyle({
-      color: warna.main,
-      weight: 6
-    });
-
-    if(o.rowEl){
-      o.rowEl.classList.remove('active');
-    }
-  });
+function zoomToPolyline(id){
+  if(polylineMap[id]){
+    map.fitBounds(polylineMap[id].getBounds(),{padding:[40,40]});
+  }else if(markerMap[id]){
+    map.setView(markerMap[id].getLatLng(),15);
+  }
 }
 
+/* ================= VIEW / EDIT PANEL (REUSE POPUP) ================= */
+function openView(d){
+  popupTitle.innerText = 'Detail Jaringan';
 
-
-/* ================= INPUT FORM ================= */
-function openInput(){
-  document.getElementById('popupTitle').innerText = 'Input Data Jaringan';
-
-  document.getElementById('popupBody').innerHTML = `
+  popupBody.innerHTML = `
     <label>Kecamatan</label>
-    <select id="f_kec" onchange="loadDesa()">
-      <option value="">-- Pilih Kecamatan --</option>
-      ${[...new Set(masterWilayah.map(d=>d.kecamatan))]
-        .map(k=>`<option>${k}</option>`).join('')}
-    </select>
+    <input value="${d.kecamatan}" readonly>
 
     <label>Desa / Kelurahan</label>
-    <select id="f_desa">
-      <option value="">-- Pilih Desa --</option>
-    </select>
+    <input value="${d.desa_kelurahan}" readonly>
 
     <label>Ruas Jalan</label>
-    <input id="f_ruas" type="text">
+    <input value="${d.ruas_jalan}" readonly>
 
     <label>Jumlah Tiang</label>
-    <input id="f_tiang" type="number">
+    <input value="${d.jumlah_tiang}" readonly>
 
     <label>Panjang Jaringan (km)</label>
-    <input value="otomatis dari tracking" readonly>
+    <input value="${d.panjang_jaringan || '-'}" readonly>
 
-    <label>Upload Data Tracking</label>
-    <input type="file" id="f_file" accept=".kml,.gpx,.geojson">
-
-    <button style="margin-top:12px" onclick="saveData()">Simpan</button>
+    <button onclick="openEdit(${d.id_jaringan})">✏️ Edit Data</button>
   `;
   openPopup();
 }
 
-/* ================= LOAD DESA ================= */
-function loadDesa(){
-  const kec = f_kec.value;
-  const desa = masterWilayah
-    .filter(d=>d.kecamatan===kec)
-    .map(d=>d.desa_kelurahan);
+function openEdit(id){
+  fetch(API+'?action=detail&id='+id)
+  .then(r=>r.json())
+  .then(d=>{
+    popupTitle.innerText = 'Edit Data Jaringan';
 
-  f_desa.innerHTML = '<option value="">-- Pilih Desa --</option>';
-  desa.forEach(d=>f_desa.innerHTML+=`<option>${d}</option>`);
+    popupBody.innerHTML = `
+      <label>Ruas Jalan</label>
+      <input id="e_ruas" value="${d.ruas_jalan}">
+
+      <label>Jumlah Tiang</label>
+      <input id="e_tiang" type="number" value="${d.jumlah_tiang}">
+
+      <button onclick="saveEdit(${id})">💾 Simpan Perubahan</button>
+    `;
+  });
 }
 
-/* ================= SAVE DATA ================= */
-function saveData(){
-  if(!f_kec.value || !f_desa.value || !f_ruas.value || !f_tiang.value){
-    alert('Lengkapi semua field');
-    return;
-  }
-
+function saveEdit(id){
   fetch(API,{
     method:'POST',
     body:JSON.stringify({
-      action:'save_data',
-      payload:{
-        kecamatan:f_kec.value,
-        desa_kelurahan:f_desa.value,
-        ruas_jalan:f_ruas.value,
-        jumlah_tiang:Number(f_tiang.value),
-        kode_kecamatan:f_kec.value.substring(0,2).toUpperCase()
-      }
+      action:'update',
+      id_jaringan:id,
+      ruas_jalan:e_ruas.value,
+      jumlah_tiang:Number(e_tiang.value)
     })
   })
   .then(r=>r.json())
   .then(j=>{
-    if(j.status!=='OK'){
-      alert(j.message); return;
-    }
-
-    const id = j.id_jaringan;
-    const file = document.getElementById('f_file').files[0];
-    if(!file){ alert('Data tersimpan'); closePopup(); return; }
-
-    const fr = new FileReader();
-    fr.onload = ()=>{
-      fetch(API,{
-        method:'POST',
-        body:JSON.stringify({
-          action:'upload_tracking',
-          id_jaringan:id,
-          filename:file.name,
-          mimeType:file.type,
-          base64:fr.result.split(',')[1]
-        })
-      }).then(()=>alert('Data & tracking tersimpan'));
-    };
-    fr.readAsDataURL(file);
+    alert('✅ Data diperbarui');
     closePopup();
+    kecamatanFilter.onchange();
   });
 }
 
 /* ================= POPUP ================= */
 function openPopup(){ popup.style.display='block'; }
 function closePopup(){ popup.style.display='none'; }
-
-/* ================= INIT ================= */
-map.whenReady(()=>{
-  loadAllData();
-});
-document.addEventListener('DOMContentLoaded', function () {
-    const el = document.getElementById('tahunFooter');
-    if (el) {
-      el.textContent = new Date().getFullYear();
-    }
-  });
 </script>
-
-<footer class="app-footer">
-  <div class="footer-inner">
-
-    <div class="footer-title">
-      MASTER PLAN PJU (SWAKELOLA 2025)
-    </div>
-
-    <div class="footer-desc">
-      Tim Master Plan PJU Kabupaten Barito Timur<br>
-      Dinas Pekerjaan Umum, Penataan Ruang, Perumahan dan Kawasan Permukiman
-      Kabupaten Barito Timur
-    </div>
-
-    <div class="footer-present">
-      Presented in Web GIS by <b>Septeriady Ngubel</b>
-    </div>
-
-    <div class="tahunFooter">
-      Tahun  <span id="tahunFooter"></span> • Kabupaten Barito Timur
-    </div>
-
-  </div>
-</footer>
 
 
 </body>

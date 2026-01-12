@@ -381,6 +381,10 @@ function render(){
     polylineMap[row.id_jaringan] = line;
 
     const marker = L.marker(coords[Math.floor(coords.length/2)],{icon:plnIcon}).addTo(layer);
+    marker.on('click', ()=>{
+  setActive(row.id_jaringan);
+  openView(row);
+});
     markerMap[row.id_jaringan] = marker;
 
     marker.bindPopup(`

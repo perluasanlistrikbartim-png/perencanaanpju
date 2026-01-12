@@ -390,6 +390,10 @@ function render(){
       Tiang: ${row.jumlah_tiang}<br>
       Panjang: ${row.panjang_jaringan} km
     `);
+marker.on('click', ()=>{
+  setActive(row.id_jaringan);
+  openView(row);
+});
 
     const tr = document.createElement('tr');
     tr.innerHTML = `

@@ -539,8 +539,81 @@ window.loadDesa = function(){
 };
 
 window.saveData = function(){
-  alert('fungsi save tetap seperti versi kamu (tidak diubah)');
-  closePopup();
+
+  const f_kec   = document.getElementById('f_kec');
+  const f_desa  = document.getElementById('f_desa');
+  const f_ruas  = document.getElementById('f_ruas');
+  const f_tiang = document.getElementById('f_tiang');
+  const f_file  = document.getElementById('f_file');
+
+  if(!f_kec.value || !f_desa.value || !f_ruas.value || !f_tiang.value){
+    alert('Lengkapi Kecamatan, Desa/Kelurahan, Ruas Jalan, dan Jumlah Tiang');
+    return;
+  }
+
+  const payload = {
+    kecamatan      : f_kec.value,
+    desa_kelurahan : f_desa.value,
+    ruas_jalan     : f_ruas.value,
+    jumlah_tiang   : Number(f_tiang.value),
+    kode_kecamatan : f_kec.value.substring(0,2).toUpperCase()
+  };
+
+  fetch(API,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'save_data',
+      payload:payload
+    })
+  })
+  .then(r=>r.json())
+  .then(j=>{
+    if(j.status!=='OK'){
+      alert('❌ '+j.message);
+      return;
+    }
+
+    const idJaringan = j.id_jaringan;
+
+    /* === upload tracking jika ada === */
+    if(f_file && f_file.files.length){
+      const file = f_file.files[0];
+      const reader = new FileReader();
+
+      reader.onload = ()=>{
+        fetch(API,{
+          method:'POST',
+          body:JSON.stringify({
+            action:'upload_tracking',
+            id_jaringan:idJaringan,
+            filename:file.name,
+            mimeType:file.type || 'application/octet-stream',
+            base64:reader.result.split(',')[1]
+          })
+        })
+        .then(r=>r.json())
+        .then(res=>{
+          if(res.status==='OK'){
+            alert('✅ Data & tracking tersimpan');
+            closePopup();
+            loadAll();
+          }else{
+            alert('❌ '+res.message);
+          }
+        });
+      };
+      reader.readAsDataURL(file);
+
+    }else{
+      alert('✅ Data tersimpan');
+      closePopup();
+      loadAll();
+    }
+  })
+  .catch(err=>{
+    console.error(err);
+    alert('❌ Gagal menyimpan data');
+  });
 };
 
 /* ================= POPUP ================= */

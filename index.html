@@ -274,6 +274,29 @@ tr:hover{
   cursor:pointer;
   background:#fff7cc;
 }
+.table-scroll{
+  max-height:45vh;
+  overflow-y:auto;
+  overflow-x:auto;
+}
+
+#tabelJaringan{
+  width:max-content;
+  min-width:1100px;
+  border-collapse:collapse;
+  font-size:13px;
+}
+
+#tabelJaringan th,
+#tabelJaringan td{
+  white-space:nowrap;
+  padding:8px 10px;
+}
+
+#tabelJaringan tr.active{
+  background:#fde68a;
+  font-weight:700;
+}
 
 </style>
 
@@ -308,6 +331,24 @@ tr:hover{
 </header>
 
 <div id="map"></div>
+<div class="table-wrapper">
+  <div class="table-scroll">
+    <table id="tabelJaringan">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Kecamatan</th>
+          <th>Desa / Kelurahan</th>
+          <th>Ruas Jalan</th>
+          <th>Jumlah Tiang</th>
+          <th>Panjang (km)</th>
+          <th>Track</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
 
 <!-- POPUP -->
 <div id="popup">
@@ -328,200 +369,125 @@ const map = L.map('map',{minZoom:9,maxZoom:19})
   .setView([-1.95,115.15],10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
 const layer = L.layerGroup().addTo(map);
 
-/* ================= ICON PLN ================= */
+/* ================= ICON ================= */
 const plnIcon = L.icon({
   iconUrl:'assets/img/pln.png',
   iconSize:[36,36],
   iconAnchor:[18,18]
 });
 
-/* ================= GLOBAL STATE ================= */
-let masterWilayah = [];
-let markerMap = {};     // id_jaringan → marker
-let polylineMap = {};   // id_jaringan → polyline
-let tableMap = {};      // id_jaringan → <tr>
+/* ================= STATE ================= */
+let dataJaringan = [];
+let polylineCache = [];
+let mapIndex = {};   // id_jaringan → { line, marker, row }
 
 /* ================= LOAD MASTER ================= */
 fetch(API+'?action=master')
 .then(r=>r.json())
 .then(j=>{
-  masterWilayah = j.data;
-  const kec = [...new Set(j.data.map(d=>d.kecamatan))];
   const sel = document.getElementById('kecamatanFilter');
-  kec.forEach(k=>{
-    sel.innerHTML += `<option value="${k}">${k}</option>`;
-  });
+  [...new Set(j.data.map(d=>d.kecamatan))]
+    .forEach(k=>sel.innerHTML+=`<option>${k}</option>`);
 });
 
-/* ================= FILTER KECAMATAN ================= */
-document.getElementById('kecamatanFilter').onchange = ()=>{
-  const kec = kecamatanFilter.value;
-  layer.clearLayers();
-  clearTable();
-  closePopup();
-  if(kec) loadDataByKecamatan(kec);
+/* ================= FILTER ================= */
+document.getElementById('kecamatanFilter').onchange = e=>{
+  renderByKecamatan(e.target.value);
 };
 
-/* ================= LOAD DATA + RENDER ================= */
-function loadDataByKecamatan(kecamatan){
-  fetch(API+'?action=data&kecamatan='+encodeURIComponent(kecamatan))
-  .then(r=>r.json())
-  .then(j=>{
-    renderTable(j.data);
-    renderMap(j.data);
-  });
+/* ================= CLEAR ================= */
+function clearAll(){
+  layer.clearLayers();
+  mapIndex = {};
+  const tbody = document.querySelector('#tabelJaringan tbody');
+  if(tbody) tbody.innerHTML = '';
 }
 
-/* ================= TABLE ================= */
-function clearTable(){
-  const tbody = document.querySelector('#tabelJaringan tbody');
-  tbody.innerHTML = '';
-  tableMap = {};
-}
+/* ================= LOAD DATA ================= */
+Promise.all([
+  fetch(API+'?action=data').then(r=>r.json()),
+  fetch(API+'?action=polyline').then(r=>r.json())
+]).then(([d,p])=>{
+  dataJaringan = d.data || [];
+  polylineCache = p.data || [];
+});
 
-function renderTable(data){
-  const tbody = document.querySelector('#tabelJaringan tbody');
-  tbody.innerHTML = '';
-  tableMap = {};
+/* ================= RENDER ================= */
+function renderByKecamatan(kec){
+  clearAll();
+  if(!kec) return;
 
-  data.forEach((d,i)=>{
+  const tbody = document.querySelector('#tabelJaringan tbody');
+  let no = 1;
+
+  polylineCache.forEach(pl=>{
+    const row = dataJaringan.find(d=>d.id_jaringan===pl.id_jaringan);
+    if(!row || row.kecamatan!==kec) return;
+
+    const coords = JSON.parse(pl.polyline_json);
+    if(!coords || coords.length<2) return;
+
+    const line = L.polyline(coords,{
+      color:'#f59e0b',
+      weight:5
+    }).addTo(layer);
+
+    const mid = coords[Math.floor(coords.length/2)];
+    const marker = L.marker(mid,{icon:plnIcon})
+      .addTo(layer)
+      .bindPopup(`<b>${row.ruas_jalan}</b><br>${row.desa_kelurahan}`);
+
+    /* ===== TABLE ===== */
     const tr = document.createElement('tr');
-
     tr.innerHTML = `
-      <td>${i+1}</td>
-      <td>${d.kecamatan}</td>
-      <td>${d.desa_kelurahan}</td>
-      <td>${d.ruas_jalan}</td>
-      <td>${d.jumlah_tiang}</td>
-      <td>${d.panjang_jaringan || '-'}</td>
+      <td>${no++}</td>
+      <td>${row.kecamatan}</td>
+      <td>${row.desa_kelurahan}</td>
+      <td>${row.ruas_jalan}</td>
+      <td>${row.jumlah_tiang}</td>
+      <td>${row.panjang_jaringan}</td>
       <td>
-        ${d.polyline_link ? `<a href="${d.polyline_link}" target="_blank">Track</a>` : '-'}
+        <a target="_blank"
+        href="https://www.google.com/maps/dir/${coords.map(c=>c[0]+','+c[1]).join('/')}">
+        Buka</a>
       </td>
     `;
 
+    tbody.appendChild(tr);
+
+    /* ===== LINK MAP ↔ TABLE ===== */
+    mapIndex[row.id_jaringan] = { line, marker, tr };
+
     tr.onclick = ()=>{
-      highlightRow(d.id_jaringan);
-      zoomToPolyline(d.id_jaringan);
-      openView(d);
+      focusRow(row.id_jaringan);
+      map.fitBounds(line.getBounds(),{padding:[40,40]});
     };
 
-    tbody.appendChild(tr);
-    tableMap[d.id_jaringan] = tr;
+    marker.on('click',()=>{
+      focusRow(row.id_jaringan);
+      tr.scrollIntoView({behavior:'smooth',block:'center'});
+    });
   });
 }
 
-/* ================= MAP ================= */
-function renderMap(data){
-  markerMap = {};
-  polylineMap = {};
-
-  data.forEach(d=>{
-    if(d.lat && d.lng){
-      const m = L.marker([d.lat,d.lng],{icon:plnIcon}).addTo(layer);
-      markerMap[d.id_jaringan] = m;
-
-      m.on('click',()=>{
-        highlightRow(d.id_jaringan);
-        openView(d);
-      });
-    }
-
-    if(d.polyline_json){
-      const pl = L.polyline(JSON.parse(d.polyline_json),{
-        color:'#facc15',
-        weight:4
-      }).addTo(layer);
-
-      polylineMap[d.id_jaringan] = pl;
-    }
+/* ================= FOCUS ================= */
+function focusRow(id){
+  Object.values(mapIndex).forEach(o=>{
+    o.tr.classList.remove('active');
+    o.line.setStyle({color:'#f59e0b',weight:5});
   });
+
+  const o = mapIndex[id];
+  if(!o) return;
+
+  o.tr.classList.add('active');
+  o.line.setStyle({color:'#dc2626',weight:8});
+  o.marker.openPopup();
 }
-
-/* ================= INTERAKSI ================= */
-function highlightRow(id){
-  Object.values(tableMap).forEach(tr=>tr.classList.remove('active'));
-  if(tableMap[id]){
-    tableMap[id].classList.add('active');
-    tableMap[id].scrollIntoView({behavior:'smooth',block:'center'});
-  }
-}
-
-function zoomToPolyline(id){
-  if(polylineMap[id]){
-    map.fitBounds(polylineMap[id].getBounds(),{padding:[40,40]});
-  }else if(markerMap[id]){
-    map.setView(markerMap[id].getLatLng(),15);
-  }
-}
-
-/* ================= VIEW / EDIT PANEL (REUSE POPUP) ================= */
-function openView(d){
-  popupTitle.innerText = 'Detail Jaringan';
-
-  popupBody.innerHTML = `
-    <label>Kecamatan</label>
-    <input value="${d.kecamatan}" readonly>
-
-    <label>Desa / Kelurahan</label>
-    <input value="${d.desa_kelurahan}" readonly>
-
-    <label>Ruas Jalan</label>
-    <input value="${d.ruas_jalan}" readonly>
-
-    <label>Jumlah Tiang</label>
-    <input value="${d.jumlah_tiang}" readonly>
-
-    <label>Panjang Jaringan (km)</label>
-    <input value="${d.panjang_jaringan || '-'}" readonly>
-
-    <button onclick="openEdit(${d.id_jaringan})">✏️ Edit Data</button>
-  `;
-  openPopup();
-}
-
-function openEdit(id){
-  fetch(API+'?action=detail&id='+id)
-  .then(r=>r.json())
-  .then(d=>{
-    popupTitle.innerText = 'Edit Data Jaringan';
-
-    popupBody.innerHTML = `
-      <label>Ruas Jalan</label>
-      <input id="e_ruas" value="${d.ruas_jalan}">
-
-      <label>Jumlah Tiang</label>
-      <input id="e_tiang" type="number" value="${d.jumlah_tiang}">
-
-      <button onclick="saveEdit(${id})">💾 Simpan Perubahan</button>
-    `;
-  });
-}
-
-function saveEdit(id){
-  fetch(API,{
-    method:'POST',
-    body:JSON.stringify({
-      action:'update',
-      id_jaringan:id,
-      ruas_jalan:e_ruas.value,
-      jumlah_tiang:Number(e_tiang.value)
-    })
-  })
-  .then(r=>r.json())
-  .then(j=>{
-    alert('✅ Data diperbarui');
-    closePopup();
-    kecamatanFilter.onchange();
-  });
-}
-
-/* ================= POPUP ================= */
-function openPopup(){ popup.style.display='block'; }
-function closePopup(){ popup.style.display='none'; }
 </script>
+
 
 
 </body>

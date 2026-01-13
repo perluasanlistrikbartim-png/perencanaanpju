@@ -305,7 +305,7 @@ const API = "https://script.google.com/macros/s/AKfycbyk8HcsTeNaVdPSb58pvFszIXD0
 let masterWilayah = [];
 let dataJaringan = [];
 let polylineCache = [];
-let pin = null; 
+let editPin = null; 
 /* ================= MODE ================= */
 let modeForm = 'add';        // add | edit
 let currentRow = null;      // data aktif
@@ -456,8 +456,8 @@ function openView(row){
 /* ================= EDIT ================= */
 function mintaEdit(){
   modeForm = 'edit';
-  const pin = prompt('Masukkan PIN Edit:');
-  if(!pin) return;
+  editPin = prompt('Masukkan PIN Edit:');
+  if(!editPin) return;
 
   popupTitle.innerText = 'Edit Data Jaringan';
 
@@ -465,24 +465,22 @@ function mintaEdit(){
     <label>Kecamatan</label>
     <select id="f_kec" onchange="loadDesaEdit()">
       ${[...new Set(masterWilayah.map(d=>d.kecamatan))]
-        .map(k=>`<option ${k===currentRow.kecamatan?'selected':''}>${k}</option>`)
-        .join('')}
+        .map(k=>`<option ${k===currentRow.kecamatan?'selected':''}>${k}</option>`).join('')}
     </select>
 
     <label>Desa / Kelurahan</label>
     <select id="f_desa"></select>
 
     <label>Ruas Jalan</label>
-    <input id="f_ruas" vax`lue="${currentRow.ruas_jalan}">
+    <input id="f_ruas" value="${currentRow.ruas_jalan}">
 
     <label>Jumlah Tiang</label>
     <input id="f_tiang" type="number" value="${currentRow.jumlah_tiang}">
 
     <label>Upload GPX (opsional)</label>
-    <<input type="file"
-       id="f_file"
-       accept=".gpx,application/gpx+xml"
-       capture="filesystem">
+    <input type="file"
+           id="f_file"
+           accept=".gpx,application/gpx+xml">
 
     <button style="margin-top:12px" onclick="saveEdit()">💾 Simpan Perubahan</button>
   `;
@@ -494,25 +492,24 @@ function saveEdit(){
   const f_file = document.getElementById('f_file');
 
   fetch(API,{
-  method:'POST',
-  body:JSON.stringify({
-    action:'update_data',
-    pin: pin,              // ⬅️ INI YANG HILANG
-    payload:{
-      id_jaringan: currentRow.id_jaringan,
-      kecamatan: document.getElementById('f_kec').value,
-      desa_kelurahan: document.getElementById('f_desa').value,
-      ruas_jalan: document.getElementById('f_ruas').value,
-      jumlah_tiang: Number(document.getElementById('f_tiang').value)
-    }
+    method:'POST',
+    body:JSON.stringify({
+      action:'update_data',
+      pin: editPin,   // ✅ SEKARANG TERKIRIM
+      payload:{
+        id_jaringan: currentRow.id_jaringan,
+        kecamatan: document.getElementById('f_kec').value,
+        desa_kelurahan: document.getElementById('f_desa').value,
+        ruas_jalan: document.getElementById('f_ruas').value,
+        jumlah_tiang: Number(document.getElementById('f_tiang').value)
+      }
+    })
   })
-})
-
   .then(r=>r.json())
   .then(j=>{
     if(j.status!=='OK'){ alert(j.message); return; }
 
-    // === JIKA ADA GPX → REPARSE ===
+    // === JIKA ADA GPX → UPLOAD + PARSE ULANG ===
     if(f_file && f_file.files.length){
       const file = f_file.files[0];
       const reader = new FileReader();
@@ -531,20 +528,20 @@ function saveEdit(){
         .then(r=>r.json())
         .then(res=>{
           if(res.status!=='OK'){ alert(res.message); return; }
-          alert('✅ Data & GPX berhasil diperbarui');
+          alert('✅ Data & GPX diperbarui');
           closePopup();
           loadAll();
         });
       };
       reader.readAsDataURL(file);
-
     }else{
-      alert('✅ Data berhasil diperbarui');
+      alert('✅ Data diperbarui');
       closePopup();
       loadAll();
     }
   });
 }
+
 
 /* ================= ADD ================= */
 window.openInput = function(){

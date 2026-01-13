@@ -425,59 +425,150 @@ function setActive(id){
 
 /* ================= VIEW ================= */
 function openView(row){
-  modeForm = 'edit';
+  modeForm = 'view';
   currentRow = row;
 
   popupTitle.innerText = 'Detail Data Jaringan';
+
   popupBody.innerHTML = `
     <label>Kecamatan</label>
     <input value="${row.kecamatan}" readonly>
 
     <label>Desa / Kelurahan</label>
-    <input id="f_desa" value="${row.desa_kelurahan}">
+    <input value="${row.desa_kelurahan}" readonly>
 
     <label>Ruas Jalan</label>
-    <input id="f_ruas" value="${row.ruas_jalan}">
+    <input value="${row.ruas_jalan}" readonly>
 
     <label>Jumlah Tiang</label>
-    <input id="f_tiang" type="number" value="${row.jumlah_tiang}">
+    <input value="${row.jumlah_tiang}" readonly>
 
-    <label>Panjang</label>
-    <input readonly value="${row.panjang_jaringan || '-'}">
+    <label>Panjang Jaringan (km)</label>
+    <input value="${row.panjang_jaringan || '-'}" readonly>
 
     <button style="margin-top:12px" onclick="mintaEdit()">✏️ Edit</button>
   `;
+
   openPopup();
 }
+
 
 /* ================= EDIT ================= */
 function mintaEdit(){
   const pin = prompt('Masukkan PIN Edit:');
-  if(!pin) return; // validasi PIN nanti di GAS
-  popupBody.innerHTML += `
-    <button style="margin-top:10px" onclick="saveEdit()">💾 Simpan Perubahan</button>
+  if(!pin) return;
+
+  popupTitle.innerText = 'Edit Data Jaringan';
+
+  popupBody.innerHTML = `
+    <label>Kecamatan</label>
+    <select id="f_kec" onchange="loadDesaEdit()">
+      ${[...new Set(masterWilayah.map(d=>d.kecamatan))]
+        .map(k=>`<option ${k===currentRow.kecamatan?'selected':''}>${k}</option>`)
+        .join('')}
+    </select>
+
+    <label>Desa / Kelurahan</label>
+    <select id="f_desa"></select>
+
+    <label>Ruas Jalan</label>
+    <input id="f_ruas" value="${currentRow.ruas_jalan}">
+
+    <label>Jumlah Tiang</label>
+    <input id="f_tiang" type="number" value="${currentRow.jumlah_tiang}">
+
+    <label>Upload GPX (opsional)</label>
+    <input type="file" id="f_file" accept=".gpx">
+
+    <button style="margin-top:12px" onclick="saveEdit()">💾 Simpan Perubahan</button>
   `;
+
+  loadDesaEdit();
+}
+function mintaEdit(){
+  const pin = prompt('Masukkan PIN Edit:');
+  if(!pin) return;
+
+  popupTitle.innerText = 'Edit Data Jaringan';
+
+  popupBody.innerHTML = `
+    <label>Kecamatan</label>
+    <select id="f_kec" onchange="loadDesaEdit()">
+      ${[...new Set(masterWilayah.map(d=>d.kecamatan))]
+        .map(k=>`<option ${k===currentRow.kecamatan?'selected':''}>${k}</option>`)
+        .join('')}
+    </select>
+
+    <label>Desa / Kelurahan</label>
+    <select id="f_desa"></select>
+
+    <label>Ruas Jalan</label>
+    <input id="f_ruas" value="${currentRow.ruas_jalan}">
+
+    <label>Jumlah Tiang</label>
+    <input id="f_tiang" type="number" value="${currentRow.jumlah_tiang}">
+
+    <label>Upload GPX (opsional)</label>
+    <input type="file" id="f_file" accept=".gpx">
+
+    <button style="margin-top:12px" onclick="saveEdit()">💾 Simpan Perubahan</button>
+  `;
+
+  loadDesaEdit();
 }
 
+
 function saveEdit(){
+  const f_file = document.getElementById('f_file');
+
   fetch(API,{
     method:'POST',
     body:JSON.stringify({
       action:'update_data',
       payload:{
-        id_jaringan:currentRow.id_jaringan,
-        desa_kelurahan:document.getElementById('f_desa').value,
-        ruas_jalan:document.getElementById('f_ruas').value,
-        jumlah_tiang:Number(document.getElementById('f_tiang').value)
+        id_jaringan: currentRow.id_jaringan,
+        kecamatan: document.getElementById('f_kec').value,
+        desa_kelurahan: document.getElementById('f_desa').value,
+        ruas_jalan: document.getElementById('f_ruas').value,
+        jumlah_tiang: Number(document.getElementById('f_tiang').value)
       }
     })
   })
   .then(r=>r.json())
   .then(j=>{
     if(j.status!=='OK'){ alert(j.message); return; }
-    alert('✅ Data diperbarui');
-    closePopup();
-    loadAll();
+
+    // === JIKA ADA GPX → REPARSE ===
+    if(f_file && f_file.files.length){
+      const file = f_file.files[0];
+      const reader = new FileReader();
+
+      reader.onload = ()=>{
+        fetch(API,{
+          method:'POST',
+          body:JSON.stringify({
+            action:'upload_tracking',
+            id_jaringan: currentRow.id_jaringan,
+            filename: file.name,
+            mimeType: file.type || 'application/gpx+xml',
+            base64: reader.result.split(',')[1]
+          })
+        })
+        .then(r=>r.json())
+        .then(res=>{
+          if(res.status!=='OK'){ alert(res.message); return; }
+          alert('✅ Data & GPX berhasil diperbarui');
+          closePopup();
+          loadAll();
+        });
+      };
+      reader.readAsDataURL(file);
+
+    }else{
+      alert('✅ Data berhasil diperbarui');
+      closePopup();
+      loadAll();
+    }
   });
 }
 
